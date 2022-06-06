@@ -1,0 +1,3100 @@
+#! / bin / bash
+#
+# Copyright (c) 2011-2018 Brother Industries, Ltd.
+#    Todos os direitos reservados.
+#
+#O irmão retém todo e qualquer direito autoral do Software.
+# Em nenhum caso, este Contrato será interpretado para designar
+# ou de outra forma transferir do Irmão para o Usuário todos os direitos autorais
+#ou outros direitos de propriedade intelectual para todo ou qualquer parte
+# do software.
+#
+#Brother concede ao usuário uma licença não exclusiva: para reproduzir
+# e / ou distribuir (via Internet ou de qualquer outra forma) o
+#Programas. Além disso, a Brother concede ao Usuário uma licença não exclusiva.
+#licença para modificar, alterar, traduzir ou preparar
+#derivativos do Software e para reproduzir e
+#distribuir (via Internet ou de qualquer outra forma) tais
+#modificação, alteração, tradução ou outro derivado
+# funciona para qualquer finalidade.
+#
+#A licença do Software da Brother aqui descrita é
+#granted "COMO ESTÁ". BROTHER RENUNCIA A QUALQUER GARANTIA COM
+# RESPEITO AO SOFTWARE, EXPRESSO OU IMPLÍCITA, INCLUINDO
+# MAS NÃO SE LIMITANDO À GARANTIA PARA A QUALIDADE, COMERCIABILIDADE,
+# APTIDÃO PARA FINALIDADE ESPECÍFICA OU NÃO VIOLAÇÃO.
+# O irmão não terá responsabilidade em contrato, delito (incluindo
+# negligência ou violação do dever estatutário) ou de qualquer outra forma
+#interrupção de uso, perda de dados ou para qualquer
+# perda ou dano acidental, punitivo ou consequencial, ou por
+#any perda de lucro, receita, dados, boa vontade ou antecipação
+#savings que surgem sob, fora ou em contemplação de
+#this acordo ou de outra forma surge devido a qualquer erro, imprecisão
+# ou defeito no Software, mesmo que a Brother tenha sido avisada sobre
+# a possibilidade de tal perda ou dano.
+# Além disso, a Brother não terá responsabilidade de divulgar e / ou
+#distribuir o cabo de origem do Software para Usuário sob qualquer
+#circunstâncias. Em nenhum caso a licença acima por parte do Irmão
+#para modificar, alterar, traduzir ou preparar derivados
+#works do Software ser interpretado como implícito da Brother
+# acordo ou empresas para divulgar e / ou distribuir o
+# cabo de fonte do software
+
+
+
+DEBUG_MSG=0
+MSG=1
+
+
+COLOR='\033[1;31m'
+COLOR2='\033[1;35m'
+COLOR3='\033[1;32m'
+COLOR4='\033[1;34m'
+MONO='\033[1;0m'
+
+
+if [ "$(echo $0 | grep  linux-brjprinter-installer)" = '' ];then
+  MESSAGE010="USAGE:  "
+  MESSAGE012="     :  "
+  MESSAGE020="  model"
+  MESSAGE030="   -f model"
+  MESSAGE040="   -l "
+  MESSAGE050="Apenas root pode executar esta operação."
+  MESSAGE060="O CUPS não está instalado."
+  MESSAGE070="Você quer especificar um servidor PROXY? [y/N] ->"
+  MESSAGE080="Enter the URL of the PROXY server."
+  MESSAGE090="   ex http://(proxy-server-url):(port)"
+  MESSAGE100="   ex http://(login-name):(password)@(proxy-server-url):(port)"
+  MESSAGE110="     ->"
+  MESSAGE120="Não é possível obter as informações do servidor."\
+"  Por favor, verifique as configurações de rede."
+  MESSAGE121="Insira o nome do modelo ->"
+  MESSAGE122="RPM ou dpkg é necessário."
+  MESSAGE130="Pacotes de drivers não podem ser encontrados."
+  MESSAGE140=" Confirme o nome do modelo."
+  MESSAGE150="Você vai instalar os seguintes pacotes."
+  MESSAGE160="OK? [y/N]  ->"
+  MESSAGE165="OK? [Y/n]  ->"
+  MESSAGE170="Você Concorda? [Y/n] ->"
+  MESSAGE180="Você Concorda? [Y/n] ->"
+  MESSAGE182="O nível de segurança do SELinux foi temporariamente reduzido "\
+"para habilitar a impressão de teste."\
+"  Para configurá-lo permanentemente, modifique o arquivo de configuração do SELinux."
+  MESSAGE184="O nível de segurança do AppArmor foi reduzido."\
+"  (aa-complain cups)"
+  MESSAGE190="Você vai especificar o URI do dispositivo? [Y/n] ->"
+  MESSAGE200="Especifique o endereço IP"
+  MESSAGE201="Auto."
+  MESSAGE210="selecione o número do URI do dispositivo de destino. ->"
+  MESSAGE220="  digite o endereço IP ->"
+  MESSAGE230="Enviar teste de Ipressão ? [y/N] ->"
+  MESSAGE240="Tecla Enter Enter / Return."
+  MESSAGE250="csh / tcsh é obrigatório."
+  MESSAGE260="O nível de segurança do SELinux foi reduzido."\
+" (Permissão permissiva -a cupsd_t)"
+  MESSAGE270="glibc.i686 / libstdc ++ é requesitado."\
+  MESSAGE280="O wget é obrigatório."
+else
+  MESSAGE010="使用方法:  "
+  MESSAGE012="　　　　:  "
+  MESSAGE020="  モデル名"
+  MESSAGE030="   -f モデル名"
+  MESSAGE040="   -l "
+  MESSAGE050="権限がありません。suもしくはsudoコマンドでroot権限を取得してください。"
+  MESSAGE060="CUPSがインストールされていません。"
+  MESSAGE070="WEBより情報を取得できません。PROXYサーバーを指定しますか? [y/N] ->"
+  MESSAGE080="PROXYサーバーのURLを入力してください。"
+  MESSAGE090="   例1 http://(proxy-server-url):(port)"
+  MESSAGE100="   例2 http://(login-name):(pass-word)@(proxy-server-url):(port)"
+  MESSAGE110="     ->"
+  MESSAGE120="インターネットに接続できません。ネットワーク設定を確認してください。"
+  MESSAGE121="モデル名を入力してください。->"
+  MESSAGE122="rpmもしくはdpkgが必要です。"
+  MESSAGE130="該当するドライバパッケージが見つかりません。"
+  MESSAGE140="　　モデル名を確認してください。"
+  MESSAGE150="以下のパッケージが見付かりました。"
+  MESSAGE160="インストールしますか? [y/N]  ->"
+  MESSAGE165="インストールしますか? [Y/n]  ->"
+  MESSAGE170="上記使用許諾に同意しますか? [Y/n] ->"
+  MESSAGE180="上記使用許諾に同意しますか? [Y/n] ->"
+  MESSAGE182="一時的にSELinuxのセキュリティレベルを下げました。恒久対策としてCUPSのセキュリティレベルをpermissiveにしてください。"
+  MESSAGE184="AppArmorのCUPSに対するセキュリティレベルを下げました (aa-complain cups)。"
+  MESSAGE190="Device URIを指定しますか? [Y/n] ->"
+  MESSAGE200="IPアドレスの指定"
+  MESSAGE201="自動設定"
+  MESSAGE210="使用するDevice URIの番号を選択してください。 ->"
+  MESSAGE220="  ご使用のプリンタ/MFCのIPアドレスを指定してください。->"
+  MESSAGE230="テスト印刷を実行しますか? [y/N] ->"
+  MESSAGE240="Enterキーを押してください。"
+  MESSAGE250="csh/tcsh が必要です。"
+  MESSAGE260="SELinuxのCUPSに対するセキュリティレベルを下げました。"\
+" (semanage permissive -a cupsd_t)"
+  MESSAGE270="32bitライブラリ（glibc.i686/libstdc++）が必要です 。"\
+  MESSAGE280="'wget'が必要です。"
+fi
+
+if [ -e "$0".rc ];then
+  source "$0".rc
+fi
+
+
+brother_license(){
+echo -e $COLOR2
+if [ $REGION != JPN ];then
+  cat <<BROTHERLICENSE
+=========================================
+Contrato de licença da Brother
+
+A Brother retém todo e qualquer direito autoral do Software. Em nenhum caso, este Contrato deverá ser interpretado de forma a atribuir ou, de outra forma, transferir da Brother para o Usuário quaisquer direitos autorais ou outros direitos de propriedade intelectual para todo ou qualquer parte do Software.
+
+A Brother concede ao Usuário uma licença não exclusiva: para reproduzir e / ou distribuir (via Internet ou de qualquer outra forma) o Software. Além disso, a Brother concede ao Usuário uma licença não exclusiva para modificar, alterar, traduzir ou preparar trabalhos derivados do Software e para reproduzir e distribuir (via Internet ou de qualquer outra forma) tal modificação, alteração, tradução ou outros trabalhos derivados para qualquer finalidade.
+
+A licença do Software da Brother é concedida "COMO ESTÁ". A BROTHER NÃO OFERECE QUAISQUER GARANTIAS COM RESPEITO AO SOFTWARE, EXPRESSAS OU IMPLÍCITAS, INCLUINDO, MAS NÃO SE LIMITANDO À GARANTIA, PELA QUALIDADE, COMERCIALIZAÇÃO, ADEQUAÇÃO A UM DETERMINADO FIM OU NÃO INFRACÇÃO.
+A Brother não se responsabiliza por contrato, ato ilícito (incluindo negligência ou violação do dever legal) ou por qualquer interrupção de uso, perda de dados ou por qualquer perda ou dano indireto, incidental, punitivo ou consequente, ou por qualquer perda de lucro , receita, dados, boa vontade ou economia antecipada que surjam sob, fora ou em contemplação deste Contrato ou que surjam de qualquer outra forma devido a qualquer erro, inexatidão ou defeito no Software, mesmo que a Brother tenha sido avisada da possibilidade de tal perda ou dano .
+Além disso, a Brother não terá responsabilidade de divulgar e / ou distribuir o cabo de origem do Software ao Usuário sob quaisquer circunstâncias. Em nenhum caso, a licença acima da Brother de modificar, alterar, traduzir ou preparar trabalhos derivados do Software deve ser interpretada como um acordo ou compromisso implícito da Brother de divulgar e / ou distribuir o cabo de origem do Software.
+=========================================
+BROTHERLICENSE
+else
+  cat <<BROTHERLICENSEJ
+=========================================
+﻿ブラザーソフトウェア用　公衆使用許諾契約書
+
+本契約は、本契約とともに配布・提供されるソフトウェア （以下単に本ソフトウェアといいます） に関し、本ソフトウェアの著作権者であるブラザー工業株式会社 （以下、ブラザーといいます） から本ソフトウェア受領者 （以下単に利用者といいます） に対し与えられる使用許諾について定めるものです。 利用者は、下記条項に従い本ソフトウェアを利用するものとします。 また、利用者は本ソフトウェアを利用することにより、下記条項に同意したものと見なされます。
+
+（１）本ソフトウェアに関する著作権は、ブラザーに帰属します。 本契約は、本ソフトウェアについてブラザーから利用者に対し著作権の全部若しくは一部を譲渡するものとは解され得ません。 
+（２）ブラザーは利用者に対し、本ソフトウェアについて複製、譲渡 （著作権の譲渡ではなくソフトウェアが格納された媒体の譲渡を指します） および公衆送信を行う権利を無償にて非独占的に許諾します。 
+（３）さらにブラザーは利用者に対し、いかなる目的のためにでも本ソフトウェアを変更、改変、翻訳あるいは本ソフトウェアの派生物を作成し、かつそれらについて複製、譲渡及び公衆送信を行う権利を無償にて非独占的に許諾します。 
+（４）ブラザーによる本ソフトウェアの配布・提供は、現状有姿にて行われるものであり、ブラザーは利用者に対し、本ソフトウェアに関し、明示・黙示問わず、何らの保証 （品質保証・有用性に関する保証・特定目的への合致に関する保証その他一切含め） も行いません。 
+（５）ブラザーは本ソフトウェアに関し、利用者に生じたいかなる損害 （直接損害・間接損害・特別損害・派生損害・懲罰的損害その他一切含め） についても、かかる損害が予測可能か否か、また、その可能性についてブラザーが知っていたか否かを問わず、賠償義務を負いません。 
+（６）さらにブラザーは利用者に対し、いかなる場合も本ソフトウェアのソースコードを開示する義務を負いません。 上記ブラザーによる変更、改変、翻訳あるいは本ソフトウェアの派生物作成に関するライセンスは、いかなる場合にも、本ソフトウェアのソースコード開示に関するブラザーの黙示的な同意とは解釈されません。 
+
+=========================================
+BROTHERLICENSEJ
+  echo -e $MONO
+fi
+}
+
+
+gpl_license(){
+echo -e $COLOR2
+cat <<GPLLICENSE
+=========================================
+Contrato de licença GPL
+
+Este Software pode ser usado de acordo com a Licença Pública Geral GNU (GPL). Por favor, leia atentamente o seguinte GPL e clique no botão "Aceito". Se você não concordar com os termos a seguir, clique no botão "Não aceito". Em caso de não aceitação, você não poderá usar este software.
+Nota:
+Por favor, clique em "Eu aceito", mantendo pressionada a tecla "Shift" ou clique com o botão direito do mouse em "Aceito" e selecione "Salvar destino como ,,," no menu.
+
+LICENÇA PÚBLICA GERAL GNU
+Versão 2, junho de 1991
+
+Copyright (C) 1989, 1991 Free Software Foundation, Inc.51 Franklin St, quinto andar, Boston, MA 02110-1301 EUA
+Todos têm permissão para copiar e distribuir cópias integrais deste documento de licença, mas a alteração não é permitida.
+
+Preâmbulo
+
+As licenças da maioria dos softwares são projetadas para tirar sua liberdade de compartilhá-las e alterá-las. Por outro lado, a Licença Pública Geral GNU visa garantir a sua liberdade de compartilhar e alterar o software livre - para garantir que o software seja gratuito para todos os seus usuários. Esta Licença Pública Geral aplica-se à maioria dos softwares da Free Software Foundation e a qualquer outro programa cujos autores se comprometam a usá-la. (Alguns outros softwares da Free Software Foundation são cobertos
+a Licença Pública Geral da Biblioteca GNU, em vez disso.) Você pode aplicá-la aos seus programas também.
+
+Quando falamos de software livre, estamos nos referindo à liberdade, não ao preço. Nossas Licenças Públicas Gerais destinam-se a garantir que você tenha a liberdade de distribuir cópias de software livre (e cobrar por esse serviço, se desejar), receber o código-fonte ou obtê-lo, se quiser, alterar o código-fonte software ou usar partes dele em novos programas gratuitos; e que você sabe que pode fazer essas coisas.
+
+Para proteger os seus direitos, precisamos fazer restrições que proíbam que alguém lhe negue esses direitos ou peça que você renuncie aos direitos. Essas restrições se traduzem em certas responsabilidades para você, se você distribuir cópias do software ou modificá-lo.
+
+Por exemplo, se você distribuir cópias de tal programa, seja gratuitamente ou por uma taxa, você deve fornecer aos destinatários todos os direitos que você possui. Você deve se certificar de que eles também recebam ou possam obter
+Código fonte. E você deve mostrar a eles estes termos para que eles conheçam seus direitos.
+
+Protegemos os seus direitos em dois passos: (1) copyright do software e (2) oferecemos-lhe esta licença que lhe dá permissão legal para copiar, distribuir e / ou modificar o software.
+
+Além disso, para a proteção de cada autor e a nossa, queremos ter certeza de que todos entendam que não há garantia para este software gratuito. Se o software for modificado por outra pessoa e transmitido, queremos que seus destinatários saibam que o que eles têm não é o original, para que quaisquer problemas introduzidos por outros não reflitam sobre a reputação dos autores originais.
+
+Finalmente, qualquer programa gratuito é constantemente ameaçado por patentes de software. Desejamos evitar o perigo de que os redistribuidores de um programa gratuito obtenham individualmente licenças de patente, tornando o programa proprietário. Para evitar isso, deixamos claro que qualquer patente deve ser licenciada para uso livre de todos ou não licenciada.
+
+Os termos e condições precisos para cópia, distribuição e modificação seguem.
+
+LICENÇA PÚBLICA GERAL GNU
+TERMOS E CONDIÇÕES PARA CÓPIA, DISTRIBUIÇÃO E MODIFICAÇÃO
+
+0. Esta Licença se aplica a qualquer programa ou outro trabalho que contenha um aviso colocado pelo detentor dos direitos autorais dizendo que ele pode ser distribuído sob os termos desta Licença Pública Geral. O "Programa", abaixo, refere-se a qualquer programa ou trabalho, e um "trabalho baseado no Programa" significa o Programa ou qualquer trabalho derivado sob a lei de direitos autorais: isto é, um trabalho contendo o Programa ou uma parte dele. ele, seja textualmente ou com modificações e / ou traduzido para outro idioma. (Doravante, a tradução está incluída sem limitação no termo "modificação".) Cada licenciado é endereçado como "você".
+
+Atividades que não sejam cópia, distribuição e modificação não são cobertas por esta Licença; eles estão fora de seu escopo. O ato de executar o Programa não é restrito, e a saída do Programa
+é coberto apenas se o seu conteúdo constituir um trabalho baseado no Programa (independentemente de ter sido feito através da execução do Programa). Se isso é verdade depende do que o Programa faz.
+
+   1. Você pode copiar e distribuir cópias integrais do código-fonte do Programa à medida que você o recebe, em qualquer meio, desde que publique de maneira visível e apropriada em cada cópia um aviso de direitos autorais e uma isenção de garantia apropriados; manter intactos todos os avisos que se referem a esta Licença e à ausência de qualquer garantia; e dar a qualquer outro destinatário do Programa uma cópia desta Licença junto com o Programa.
+
+      Você pode cobrar uma taxa pelo ato físico de transferir uma cópia e pode, a seu critério, oferecer proteção de garantia em troca de uma taxa.
+      
+      2. Você pode modificar sua cópia ou cópias do Programa ou de qualquer parte dele, formando assim um trabalho baseado no Programa, e copiar e distribuir tais modificações ou trabalhar sob os termos da Seção 1 acima, desde que você também atenda a todas estas condições:
+
+      a) Você deve fazer com que os arquivos modificados carreguem avisos proeminentes informando que você alterou os arquivos e a data de qualquer alteração.
+
+      b) Você deve fazer com que qualquer trabalho que você distribua ou publique, que no todo ou em parte contenha ou seja derivado do Programa ou de qualquer parte dele, seja licenciado como um todo sem custo para todos os terceiros sob os termos desta Licença. .
+
+      c) Se o programa modificado normalmente lê comandos de forma interativa quando executado, você deve causar, quando iniciado a execução para tal uso interativo da forma mais comum, imprimir ou exibir um
+      anúncio incluindo um aviso de direitos autorais apropriado e um aviso de que não há garantia (ou que você forneça uma garantia) e que os usuários podem redistribuir o programa sob essas condições e informar ao usuário como visualizar uma cópia desta Licença. (Exceção: se o Programa em si é interativo, mas normalmente não imprime tal anúncio, seu trabalho baseado no Programa não é necessário para imprimir um anúncio.)
+      
+      Esses requisitos se aplicam ao trabalho modificado como um todo. Se seções identificáveis ​​desse trabalho não forem derivadas do Programa e puderem ser razoavelmente consideradas trabalhos independentes e separados em si mesmos, então essa Licença e seus termos não se aplicarão a essas seções quando você as distribuir como trabalhos separados. Mas quando você distribui as mesmas seções como parte de um todo que é um trabalho baseado no Programa, a distribuição do todo deve estar nos termos desta Licença, cujas permissões para outros licenciados se estendem para o todo, e assim para cada e cada parte, independentemente de quem escreveu.
+
+      Assim, não é a intenção desta seção reivindicar direitos ou contestar seus direitos ao trabalho escrito inteiramente por você; em vez disso, a intenção é exercer o direito de controlar a distribuição de trabalhos derivados ou coletivos baseados no Programa.
+
+      Além disso, a mera agregação de outro trabalho não baseado no Programa com o Programa (ou com um trabalho baseado no Programa) em um volume de armazenamento ou meio de distribuição não coloca o outro trabalho sob o escopo desta Licença.
+   3. Você pode copiar e distribuir o Programa (ou um trabalho baseado nele, sob a Seção 2) em código objeto ou forma executável sob os termos das Seções 1 e 2 acima, desde que você também faça o seguinte:
+
+      a) Acompanhe-o com o código fonte completo correspondente, legível por máquina, que deve ser distribuído sob os termos das Seções 1 e 2 acima em um meio normalmente usado para troca de software; ou,
+
+      b) Acompanhá-lo com uma oferta por escrito, válida por pelo menos três anos, para dar a terceiros, por uma taxa não mais do que seu custo de distribuição de fontes físicas, uma cópia completa legível por máquina do código-fonte correspondente. distribuído sob os termos das Seções 1 e 2 acima em um meio normalmente usado para troca de software; ou,
+
+      c) Acompanhe-a com as informações recebidas sobre a oferta de distribuição do código-fonte correspondente. (Esta alternativa é permitida apenas para distribuição não comercial e somente se você
+      recebeu o programa em código objeto ou forma executável com tal oferta, de acordo com a Subseção b acima.)
+
+      O código-fonte de um trabalho significa a forma preferida do trabalho para fazer modificações nele. Para um trabalho executável, o código-fonte completo significa todo o código-fonte de todos os módulos que ele contém, além de quaisquer arquivos de definição de interface associados, além dos scripts usados ​​para controlar a compilação e a instalação do executável. No entanto, como uma exceção especial, o código-fonte distribuído não precisa incluir nada que é normalmente distribuído (em forma de origem ou binária) com os principais componentes (compilador, kernel e assim por diante) do sistema operacional no qual o executável é executado. a menos que esse componente acompanhe o executável.
+
+      Se a distribuição de código executável ou de objeto for feita oferecendo acesso a cópia de um local designado, a oferta de acesso equivalente para copiar o código-fonte do mesmo local conta como distribuição do código-fonte, mesmo que terceiros não sejam obrigados a copiar o código-fonte. fonte junto com o código objeto.
+   4. Você não pode copiar, modificar, sublicenciar ou distribuir o Programa, exceto conforme expressamente previsto nesta Licença. Qualquer tentativa de copiar, modificar, sublicenciar ou distribuir o Programa é nula e terminará automaticamente seus direitos sob esta Licença. No entanto, as partes que receberam cópias, ou direitos, de você sob esta Licença não terão suas licenças terminadas, desde que essas partes permaneçam em total conformidade.
+   5. Você não é obrigado a aceitar esta Licença, desde que você não a tenha assinado. No entanto, nada mais lhe concede permissão para modificar ou distribuir o Programa ou seus trabalhos derivados. Essas ações são proibidas por lei se você não aceitar esta licença. Portanto, modificando ou distribuindo o Programa (ou qualquer trabalho baseado no Programa), você indica sua aceitação desta Licença para fazê-lo e todos os seus termos e condições para copiar, distribuir ou modificar
+      o Programa ou funciona com base nele.
+   6. Cada vez que você redistribuir o Programa (ou qualquer trabalho baseado no Programa), o destinatário receberá automaticamente uma licença do licenciante original para copiar, distribuir ou modificar o Programa, sujeito a estes termos e condições. Você não pode impor nenhuma restrição adicional ao exercício dos direitos dos beneficiários aqui concedidos. Você não é responsável por impor a conformidade de terceiros a esta Licença.
+   7. Se, como conseqüência de uma decisão judicial ou alegação de violação de patente ou por qualquer outro motivo (não limitado a questões de patentes), forem impostas condições (seja por ordem judicial, acordo ou outro) que contradigam as condições deste Licença, eles não o isentam das condições desta Licença. Se você não puder distribuir de modo a satisfazer simultaneamente suas obrigações sob esta Licença e quaisquer outras obrigações pertinentes, então, como conseqüência, você não poderá distribuir o Programa. Por exemplo, se uma licença de patente não permitir a redistribuição livre de royalties do Programa por todos aqueles que receberem cópias direta ou indiretamente através de você, então a única maneira de satisfazê-la e a esta Licença seria abster-se inteiramente da distribuição da licença. Programa.
+
+      Se qualquer parte desta seção for considerada inválida ou inexeqüível sob qualquer circunstância específica, o saldo da seção deverá ser aplicado e a seção como um todo deve ser aplicada em outras circunstâncias.
+
+      Não é o propósito desta seção induzir você a infringir quaisquer patentes ou outras reivindicações de direitos de propriedade ou a contestar a validade de tais reivindicações; esta seção tem o único propósito de proteger a integridade do sistema de distribuição de software livre, que é implementado por práticas de licença pública. Muitas pessoas fizeram contribuições generosas para a ampla gama de softwares distribuídos por esse sistema, confiando na aplicação consistente desse sistema; cabe ao autor / doador decidir se ele ou ela está disposto a distribuir software através de qualquer outro sistema e um licenciado não pode impor essa escolha.
+
+      Esta seção destina-se a esclarecer completamente o que se acredita ser uma consequência do restante desta Licença.
+   8. Se a distribuição e / ou uso do Programa for restrito em determinados países por patentes ou por interfaces protegidas por direitos autorais, o detentor original dos direitos autorais que colocar o Programa sob esta Licença poderá adicionar uma limitação explícita de distribuição geográfica, excluindo esses países. é permitido apenas em ou entre países não excluídos. Nesse caso, esta Licença incorpora a limitação como se estivesse escrita no corpo desta Licença.
+   9. A Free Software Foundation pode publicar versões revisadas e / ou novas da Licença Pública Geral de tempos em tempos. Essas novas versões serão semelhantes em espírito à versão atual, mas podem diferir em detalhes para abordar novos problemas ou preocupações.
+
+      Cada versão recebe um número de versão distinto. Se o Programa especificar um número de versão desta Licença que se aplique a ele e "qualquer versão posterior", você terá a opção de seguir os termos e condições dessa versão ou de qualquer versão posterior publicada pela Free Software Foundation. Se o Programa não especificar um número de versão desta Licença, você poderá escolher qualquer versão já publicada pela Free Software Foundation.
+  10. Se você deseja incorporar partes do Programa em outros programas livres cujas condições de distribuição são diferentes, escreva para o autor para pedir permissão. Para software que é protegido por direitos autorais da Free Software Foundation, escreva para a Free Software Foundation; às vezes fazemos exceções para isso. Nossa decisão será guiada pelos dois objetivos de preservar o status livre de todos os derivados de nosso software livre e de promover o compartilhamento e a reutilização de software em geral.
+ 
+SEM GARANTIA
+
+  11. COMO O PROGRAMA É LICENCIADO GRATUITAMENTE, NÃO HÁ NENHUMA GARANTIA PARA O PROGRAMA, NA EXTENSÃO PERMITIDA PELA LEGISLAÇÃO APLICÁVEL. EXCETO QUANDO, DE OUTRA FORMA, FORMADO POR ESCRITO, OS TITULARES DOS DIREITOS DE AUTOR E / OU OUTRAS PARTES FORNECEM O PROGRAMA "NO ESTADO EM QUE SE ENCONTRA", SEM GARANTIA DE QUALQUER TIPO, EXPRESSA OU IMPLÍCITA, INCLUINDO, MAS NÃO SE LIMITANDO ÀS GARANTIAS IMPLÍCITAS DE COMERCIALIZAÇÃO E ADEQUAÇÃO A UM FIM ESPECÍFICO . TODO O RISCO QUANTO À QUALIDADE E DESEMPENHO DO PROGRAMA É COM VOCÊ. SE O PROGRAMA FOR PROFUNDO DEFEITO, VOCÊ ASSUME O CUSTO DE TODOS OS SERVIÇOS, REPAROS OU CORREÇÕES NECESSÁRIOS.
+  12. EM CASO ALGUM, A MENOS QUE EXIGIDO PELA LEI APLICÁVEL OU ACORDADO POR ESCRITO, QUALQUER TITULAR DOS DIREITOS AUTORAIS, OU QUALQUER OUTRA PARTE QUE POSSA MODIFICAR E / OU REDISTRIZAR O PROGRAMA COMO PERMITIDO ACIMA, SERÁ RESPONSÁVEL POR DANOS, INCLUINDO QUAISQUER DADOS GERAIS, ESPECIAIS, DANOS INCIDENTAIS OU CONSEQÜENCIAIS DECORRENTES DO USO OU INCAPACIDADE DE USAR O PROGRAMA (INCLUINDO, MAS NÃO SE LIMITANDO À PERDA DE DADOS OU DADOS QUE TIVER SIDO INCORRECIDAS OU PERDAS SUSTENTADAS POR VOCÊ OU TERCEIROS OU FALHA DO PROGRAMA DE OPERAR COM OUTROS PROGRAMAS) , MESMO QUE O TITULAR OU OUTRA PARTE TENHA SIDO AVISADO DA POSSIBILIDADE DE TAIS DANOS.
+
+FIM DOS TERMOS E CONDIÇÕES
+
+Como aplicar estes termos aos seus novos programas
+
+Se você desenvolver um novo programa e quiser que ele seja da maior utilidade possível para o público, a melhor maneira de conseguir isso é torná-lo um software livre que todos possam redistribuir e alterar nesses termos.
+
+Para isso, anexe os seguintes avisos ao programa. É mais seguro anexá-los ao início de cada arquivo de origem para transmitir de forma mais eficaz a exclusão da garantia; e cada arquivo deve ter pelo menos a linha "copyright" e um ponteiro para onde o aviso completo é encontrado.
+
+<uma linha para indicar o nome do programa e uma breve ideia do que ele faz.>
+Copyright (C) <ano> <nome do autor>
+
+Este programa é software livre; você pode redistribuí-lo e / ou modificá-lo sob os termos da Licença Pública Geral GNU, conforme publicada pela Free Software Foundation; ou a versão 2 da Licença, ou (a seu critério) qualquer versão posterior.
+
+Este programa é distribuído na esperança de que seja útil, mas SEM QUALQUER GARANTIA; sem mesmo a garantia implícita de COMERCIALIZAÇÃO ou ADEQUAÇÃO A UM DETERMINADO FIM. Veja a Licença Pública Geral GNU para mais detalhes.
+
+Você deve ter recebido uma cópia da Licença Pública Geral GNU junto com este programa; se não, escreva para a Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 EUA
+
+
+Adicione também informações sobre como contatá-lo por correio eletrônico e em papel.
+
+Se o programa for interativo, faça com que seja emitido um aviso breve como este quando ele for iniciado em um modo interativo:
+
+Gnomovision versão 69, Copyright (C) ano nome do autor Gnomovision
+vem com ABSOLUTAMENTE NENHUMA GARANTIA; para detalhes tipo \ `show w '.
+Este é um software livre e você pode redistribuí-lo
+sob certas condições; digite \ `show c 'para detalhes.
+
+Os comandos hipotéticos \ `show w 'e \' show c 'devem mostrar as partes apropriadas da Licença Pública Geral. Claro, os comandos que você usa podem ser chamados de algo diferente de \ `show w 'e \' show c '; eles podem até ser cliques do mouse ou itens de menu - o que melhor se adequar ao seu programa.
+
+Você também deve obter seu empregador (se você trabalha como programador) ou sua escola, se houver, para assinar um "aviso de direitos autorais" para o programa, se necessário. Aqui está uma amostra; altere os nomes:
+
+Yoyodyne, Inc., aqui se isenta de todos os direitos autorais sobre o programa
+\ `Gnomovision '(que faz passagens em compiladores) escrito por James Hacker.
+
+<assinatura de Ty Coon>, 1 de abril de 1989
+Ty Coon, presidente da vice
+
+Esta Licença Pública Geral não permite incorporar seu programa em programas proprietários. Se o seu programa é uma biblioteca de sub-rotinas, você pode considerar mais útil permitir a vinculação de aplicativos proprietários à biblioteca. Se isto é o que você quer fazer, use a Licença Pública Geral da Biblioteca GNU ao invés desta Licença.
+=========================================
+GPLLICENSE
+  echo -e $MONO
+}
+
+
+
+
+
+
+gpl_and_br_license(){
+    echo -e $COLOR2
+    if [ $REGION = JPN ];then
+	cat <<GPLBROTHERLICENSE_J
+本契約は、本契約とともに配布・提供されるソフトウェア（以下単に本ソフトウェアといいます）に関し、ブラザー工業株式会社（以下、ブラザーといいます）から本ソフトウェア受領者（以下、お客様といいます）に対し与えられる使用許諾について定めるものです。
+
+1.本ソフトウェアは、以下のモジュールから構成されています。
+(1) GNU GENERAL PUBLIC LICENSE対象ソフトウェアモジュール（以下、GPL対象モジュールといいます） 
+(2) 上記に該当しないソフトウェアモジュール（以下、非GPLモジュールといいます。 
+本ソフトウェアを構成する各モジュールが上記のいずれに該当するかについては、本ソフトウェアのソースファイルをダウンロード頂きご確認ください。
+
+
+2.GPL対象モジュールについては、GNU GENERAL PUBLIC LICENSE Version 2, June 1991（以下GPLv2といいます）の条件が適用されます。その条件の詳細については、 http://www.brother.co.jp/jp/agreement/japanese_gpl/agree.html をご確認ください。GPL対象モジュールについては、お客様は、GPLv2に定める条件に従い利用するものとします。また、お客様はGPL対象モジュールを利用することにより、GPLv2に定める条件に同意したものと見なされます。
+
+
+3.非GPLモジュールについては、下記の条件が適用されます。非GPLモジュールについては、お客様は、下記の条件に従い利用するものとします。また、お客様は非GPLモジュールを利用することにより、下記条件に同意したものと見なされます。
+(1) 非GPLモジュールに関する著作権は、ブラザーに帰属します。本契約は、非GPLモジュールについてブラザーからお客様に対し著作権の全部若しくは一部を譲渡するものとは解され得ません。 
+(2) ブラザーはお客様に対し、非GPLモジュールについて複製、譲渡（著作権の譲渡ではなくソフトウェアが格納された媒体の譲渡を指します）、公衆送信、および、改変並びに翻案（改変若しくは翻案された非GPLモジュールの複製、譲渡及び公衆送信を含みます）を行う権利を、無償にて非独占的に許諾します。 
+(3) お客様は、前号に基づく譲渡及び公衆送信に際し、本契約に定めると同一内容の再使用許諾を受領者に明示的に与えなければなりません。 
+(4) ブラザーによる非GPLモジュールの配布・提供は、現状有姿にて行われるものであり、ブラザーはお客様に対し、非GPLモジュールに関し、明示・黙示問わず、何らの保証（品質保証・有用性に関する保証・特定目的への合致に関する保証その他一切含め）も行いません。 
+(5) ブラザーは非GPLモジュールに関し、適用法で認められる限り、お客様に生じたいかなる損害（直接損害・間接損害・特別損害・派生損害・懲罰的損害その他一切含め）についても、かかる損害が予測可能か否か、また、その可能性についてブラザーが知っていたか否かを問わず、賠償義務を負いません。 
+(6) さらにブラザーはお客様に対し、いかなる場合も非GPLモジュールのソースコードを開示する義務を負いません。上記ブラザーによる改変、翻案に関するライセンスは、いかなる場合にも、非GPLモジュールのソースコード開示に関するブラザーの黙示的な同意とは解釈されません。 
+
+GPLBROTHERLICENSE_J
+    else 
+	cat <<GPLBROTHERLICENSE_U
+Este Contrato fornece os termos e condições para a concessão de licença para uso do software que é distribuído com este Contrato ("Software") da Brother Industries, Ltd. ("Brother") para seus destinatários ("Você").
+
+Nota:
+Por favor, clique em "Eu aceito", mantendo pressionada a tecla "Shift" ou clique com o botão direito do mouse em "Aceito" e selecione "Salvar destino como ,,," no menu.
+
+1.O Software é composto pelos seguintes módulos de software:
+
+(1) Certos módulos de software que são o assunto da LICENÇA PÚBLICA GERAL GNU ("Módulos GPL"), e
+(2) Outros módulos de software ("Módulos não-GPL")
+
+Você pode distinguir cada um dos Módulos GPL baixando os arquivos de origem do Software à medida que a Brother os disponibiliza separadamente e lendo tais arquivos.
+
+2. Seu uso de todos os Módulos GPL estará sujeito aos termos e condições da GNU GENERAL PUBLIC LICENSE Versão 2, junho de 1991 ("GPLv2"). Por favor, consulte http://www.brother.com/agreement/English_gpl/agree.html. Você deverá usar os módulos GPL de acordo com os termos e condições da GPLv2. Seu uso dos Módulos GPL deve ser considerado como sua concordância com os termos e condições da GPLv2.
+
+3.Você tem o direito de usar todos os Módulos Não-GPL apenas de acordo com os seguintes termos e condições. Seu uso de módulos não-GPL deve ser considerado como sua concordância com os seguintes termos e condições:
+(1) A Brother retém todo e qualquer direito autoral dos Módulos Não-GPL. Em nenhum caso, este Contrato deverá ser interpretado de forma a atribuir ou transferir da Brother a você quaisquer direitos autorais ou outros direitos de propriedade intelectual para toda ou qualquer parte dos Módulos Não-GPL.
+
+(2) A Brother concede a você uma licença não exclusiva para reproduzir e / ou distribuir (via Internet ou de qualquer outra forma) Módulos não-GPL. A Brother concede ainda a você uma licença não exclusiva para modificar, alterar, traduzir ou preparar trabalhos derivados de Módulos Não-GPL e para reproduzir e / ou distribuir (via Internet ou de qualquer outra maneira) tal modificação, alteração, tradução ou outro derivativo obras de módulos não-GPL.
+
+(3) Quando distribuir (via Internet ou de qualquer outra forma) Módulos Não-GPL ou qualquer modificação, alteração, tradução ou outras obras derivadas do mesmo sob a licença concedida de acordo com o parágrafo 3 (2) acima, você deve conceder expressamente qualquer e todos os destinatários da mesma a licença equivalente a este Contrato que se aplica a Módulos Não-GPL.
+
+(4) A licença dos Módulos Não-GPL da Brother é concedida "TAL COMO ESTÁ. O IRMÃO RENUNCIA QUAISQUER GARANTIAS COM RESPEITO A MÓDULOS NÃO GPL, EXPRESSOS OU IMPLÍCITOS, INCLUINDO, MAS NÃO LIMITADO À GARANTIA PARA A QUALIDADE, COMERCIALIZAÇÃO, ADEQUAÇÃO PARA OBJETIVO ESPECÍFICO OU NÃO INFRAÇÃO.
+
+(5) Na medida permitida pela legislação aplicável, a Brother não terá responsabilidade em contrato, ato ilícito (incluindo negligência ou violação de dever legal) ou de qualquer forma por qualquer interrupção de uso, perda de dados ou por qualquer dano indireto, incidental, punitivo ou perda ou dano conseqüente, ou por qualquer perda de lucro, receita, dados, boa vontade ou economia antecipada que surja sob, fora ou na contemplação deste Contrato ou que surja de qualquer outra forma devido a qualquer erro, imprecisão ou defeito nos Módulos Não-GPL, mesmo se a Brother tiver sido avisada da possibilidade de tal perda ou dano.
+
+(6) A forma em que os Módulos Não-GPL são distribuídos está sujeita a critério exclusivo dos Irmãos. A Brother não tem qualquer obrigação de distribuir ou divulgar Módulos Não-GPL na forma de código-fonte. Em nenhum caso este Acordo será considerado como um acordo expresso ou implícito dos Irmãos para divulgar o código fonte dos Módulos Não-GPL.
+GPLBROTHERLICENSE_U
+    fi
+}
+
+
+pdrv_complex_license(){
+    echo -e $COLOR2
+    if [ $REGION = JPN ];then
+	cat <<PDVRLICENSE_J
+本契約は、本契約とともに配布・提供されるソフトウェア （以下単に本ソフトウェアといいます） に関し、本ソフトウェアの著作権者であるブラザー工業株式会社 （以下、ブラザーといいます） から本ソフトウェア受領者 （以下単に利用者といいます） に対し与えられる使用許諾について定めるものです。 利用者は、下記条項に従い本ソフトウェアを利用するものとします。 また、利用者は本ソフトウェアを利用することにより、下記条項に同意したものと見なされます。
+1.	本ソフトウェアに関する著作権は、ブラザーに帰属します。 本契約は、本ソフトウェアについてブラザーから利用者に対し著作権の全部若しくは一部を譲渡するものとは解され得ません。
+2.	ブラザーは利用者に対し、本ソフトウェアについて複製、譲渡 （著作権の譲渡ではなくソフトウェアが格納された媒体の譲渡を指します） および公衆送信を行う権利を無償にて非独占的に許諾します。
+3.	さらにブラザーは利用者に対し、いかなる目的のためにでも本ソフトウェアを変更、改変、翻訳あるいは本ソフトウェアの派生物を作成し、かつそれらについて複製、譲渡及び公衆送信を行う権利を無償にて非独占的に許諾します。
+4.	ブラザーによる本ソフトウェアの配布・提供は、現状有姿にて行われるものであり、ブラザーは利用者に対し、本ソフトウェアに関し、明示・黙示問わず、何らの保証 （品質保証・有用性に関する保証・特定目的への合致に関する保証その他一切含め） も行いません。
+5.	ブラザーは本ソフトウェアに関し、利用者に生じたいかなる損害 （直接損害・間接損害・特別損害・派生損害・懲罰的損害その他一切含め） についても、かかる損害が予測可能か否か、また、その可能性についてブラザーが知っていたか否かを問わず、賠償義務を負いません。
+6.	さらにブラザーは利用者に対し、いかなる場合も本ソフトウェアのソースコードを開示する義務を負いません。 上記ブラザーによる変更、改変、翻訳あるいは本ソフトウェアの派生物作成に関するライセンスは、いかなる場合にも、本ソフトウェアのソースコード開示に関するブラザーの黙示的な同意とは解釈されません。
+7.	本ソフトウェアには、GNU GENERAL PUBLIC LICENSE Version 2の条件の適用を受けるプログラムが含まれております。第1条から第6項の規定に関わらず、これらのプログラムにはGNU GENERAL PUBLIC LICENSE Version 2の条件が適用されます。これらのプログラムは以下のディレクトリ及びそのサブディレクトリに保存されています。
+<cupswrapper>
+LICENÇA PÚBLICA GERAL GNU
+Versão 2, junho de 1991
+Copyright (C) 1989, 1991 Free Software Foundation, Inc.
+51 Franklin Street, quinto andar, Boston, MA 02110-1301, EUA
+
+Todos têm permissão para copiar e distribuir cópias textuais
+deste documento de licença, mas alterá-lo não é permitido.
+Preâmbulo
+As licenças da maioria dos softwares são projetadas para tirar sua liberdade de compartilhá-las e alterá-las. Por outro lado, a Licença Pública Geral GNU visa garantir a sua liberdade de compartilhar e alterar o software livre - para garantir que o software seja gratuito para todos os seus usuários. Esta Licença Pública Geral aplica-se à maioria dos softwares da Free Software Foundation e a qualquer outro programa cujos autores se comprometam a usá-la. (Alguns outros softwares da Free Software Foundation são cobertos pela Licença Pública Geral Menor do GNU.) Você também pode aplicá-la aos seus programas.
+Quando falamos de software livre, estamos nos referindo à liberdade, não ao preço. Nossas Licenças Públicas Gerais destinam-se a garantir que você tenha a liberdade de distribuir cópias de software livre (e cobrar por esse serviço, se desejar), receber o código-fonte ou obtê-lo, se quiser, alterar o código-fonte software ou usar partes dele em novos programas gratuitos; e que você sabe que pode fazer essas coisas.
+Para proteger os seus direitos, precisamos fazer restrições que proíbam que alguém lhe negue esses direitos ou peça que você renuncie aos direitos. Essas restrições se traduzem em certas responsabilidades para você, se você distribuir cópias do software ou modificá-lo.
+Por exemplo, se você distribuir cópias de tal programa, seja gratuitamente ou por uma taxa, você deve fornecer aos destinatários todos os direitos que você possui. Você deve se certificar de que eles também recebam ou possam obter o código-fonte. E você deve mostrar a eles estes termos para que eles conheçam seus direitos.
+Protegemos os seus direitos em dois passos: (1) copyright do software e (2) oferecemos-lhe esta licença que lhe dá permissão legal para copiar, distribuir e / ou modificar o software.
+Além disso, para a proteção de cada autor e a nossa, queremos ter certeza de que todos entendam que não há garantia para este software gratuito. Se o software for modificado por outra pessoa e transmitido, queremos que seus destinatários saibam que o que eles têm não é o original, para que quaisquer problemas introduzidos por outros não reflitam sobre a reputação dos autores originais.
+Finalmente, qualquer programa gratuito é constantemente ameaçado por patentes de software. Desejamos evitar o perigo de que os redistribuidores de um programa gratuito obtenham individualmente licenças de patente, tornando o programa proprietário. Para evitar isso, deixamos claro que qualquer patente deve ser licenciada para uso livre de todos ou não licenciada.
+Os termos e condições precisos para cópia, distribuição e modificação seguem.
+TERMOS E CONDIÇÕES PARA CÓPIA, DISTRIBUIÇÃO E MODIFICAÇÃO
+
+0. Esta Licença se aplica a qualquer programa ou outro trabalho que contenha um aviso colocado pelo detentor dos direitos autorais dizendo que ele pode ser distribuído sob os termos desta Licença Pública Geral. O "Programa", abaixo, refere-se a qualquer programa ou trabalho, e um "trabalho baseado no Programa" significa o Programa ou qualquer trabalho derivado sob a lei de direitos autorais: isto é, um trabalho contendo o Programa ou uma parte dele. ele, seja textualmente ou com modificações e / ou traduzido para outro idioma. (Doravante, a tradução está incluída sem limitação no termo "modificação".) Cada licenciado é endereçado como "você".
+Atividades que não sejam cópia, distribuição e modificação não são cobertas por esta Licença; eles estão fora de seu escopo. O ato de executar o Programa não é restrito, e a saída do Programa é coberta somente se o seu conteúdo constituir um trabalho baseado no Programa (independente de ter sido feito executando o Programa). Se isso é verdade depende do que o Programa faz.
+
+1. Você pode copiar e distribuir cópias integrais do código-fonte do Programa à medida que você o recebe, em qualquer meio, desde que publique de maneira visível e apropriada em cada cópia um aviso de direitos autorais e uma isenção de garantia apropriados; manter intactos todos os avisos que se referem a esta Licença e à ausência de qualquer garantia; e dar a qualquer outro destinatário do Programa uma cópia desta Licença junto com o Programa.
+Você pode cobrar uma taxa pelo ato físico de transferir uma cópia e pode, a seu critério, oferecer proteção de garantia em troca de uma taxa.
+
+2. Você pode modificar sua cópia ou cópias do Programa ou de qualquer parte dele, formando assim um trabalho baseado no Programa, e copiar e distribuir tais modificações ou trabalhar sob os termos da Seção 1 acima, desde que você também atenda a todas estas condições:
+
+a) Você deve fazer com que os arquivos modificados carreguem avisos proeminentes informando que você alterou os arquivos e a data de qualquer alteração.
+
+b) Você deve fazer com que qualquer trabalho que você distribua ou publique, que no todo ou em parte contenha ou seja derivado do Programa ou de qualquer parte dele, seja licenciado como um todo sem custo para todos os terceiros sob os termos desta Licença. .
+
+c) Se o programa modificado normalmente lê os comandos interativamente quando executado, você deve fazer com que ele, quando iniciado para tal uso interativo da forma mais comum, imprima ou exiba um anúncio incluindo um aviso de copyright apropriado e um aviso de que não há garantia (ou então, dizendo que você fornece uma garantia) e que os usuários podem redistribuir o programa sob essas condições e dizendo ao usuário como visualizar uma cópia desta Licença. (Exceção: se o Programa em si é interativo, mas normalmente não imprime tal anúncio, seu trabalho baseado no Programa não é necessário para imprimir um anúncio.)
+Esses requisitos se aplicam ao trabalho modificado como um todo. Se seções identificáveis ​​desse trabalho não forem derivadas do Programa e puderem ser razoavelmente consideradas trabalhos independentes e separados em si mesmos, então essa Licença e seus termos não se aplicarão a essas seções quando você as distribuir como trabalhos separados. Mas quando você distribui as mesmas seções como parte de um todo que é um trabalho baseado no Programa, a distribuição do todo deve estar nos termos desta Licença, cujas permissões para outros licenciados se estendem para o todo, e assim para cada e cada parte, independentemente de quem escreveu.
+Assim, não é a intenção desta seção reivindicar direitos ou contestar seus direitos ao trabalho escrito inteiramente por você; em vez disso, a intenção é exercer o direito de controlar a distribuição de trabalhos derivados ou coletivos baseados no Programa.
+Além disso, a mera agregação de outro trabalho não baseado no Programa com o Programa (ou com um trabalho baseado no Programa) em um volume de armazenamento ou meio de distribuição não coloca o outro trabalho sob o escopo desta Licença.
+
+3. Você pode copiar e distribuir o Programa (ou um trabalho baseado nele, sob a Seção 2) em código objeto ou forma executável sob os termos das Seções 1 e 2 acima, desde que você também faça o seguinte:
+
+a) Acompanhe-o com o código fonte completo correspondente, legível por máquina, que deve ser distribuído sob os termos das Seções 1 e 2 acima em um meio normalmente usado para troca de software; ou,
+
+b) Acompanhá-lo com uma oferta por escrito, válida por pelo menos três anos, para dar a terceiros, por uma taxa não mais do que seu custo de distribuição de fontes físicas, uma cópia completa legível por máquina do código-fonte correspondente. distribuído sob os termos das Seções 1 e 2 acima em um meio normalmente usado para troca de software; ou,
+
+c) Acompanhe-a com as informações recebidas sobre a oferta de distribuição do código-fonte correspondente. (Esta alternativa é permitida apenas para distribuição não comercial e somente se você recebeu o programa em código objeto ou forma executável com tal oferta, de acordo com a Subseção b acima.)
+O código-fonte de um trabalho significa a forma preferida do trabalho para fazer modificações nele. Para um trabalho executável, o código-fonte completo significa todo o código-fonte de todos os módulos que ele contém, além de quaisquer arquivos de definição de interface associados, além dos scripts usados ​​para controlar a compilação e a instalação do executável. No entanto, como uma exceção especial, o código-fonte distribuído não precisa incluir nada que é normalmente distribuído (em forma de origem ou binária) com os principais componentes (compilador, kernel e assim por diante) do sistema operacional no qual o executável é executado. a menos que esse componente acompanhe o executável.
+Se a distribuição de código executável ou de objeto for feita oferecendo acesso a cópia de um local designado, a oferta de acesso equivalente para copiar o código-fonte do mesmo local conta como distribuição do código-fonte, mesmo que terceiros não sejam obrigados a copiar o código-fonte. fonte junto com o código objeto.
+
+4. Você não pode copiar, modificar, sublicenciar ou distribuir o Programa, exceto conforme expressamente previsto nesta Licença. Qualquer tentativa de copiar, modificar, sublicenciar ou distribuir o Programa é nula e terminará automaticamente seus direitos sob esta Licença. No entanto, as partes que receberam cópias, ou direitos, de você sob esta Licença não terão suas licenças terminadas, desde que essas partes permaneçam em total conformidade.
+
+5. Você não é obrigado a aceitar esta Licença, desde que você não a tenha assinado. No entanto, nada mais lhe concede permissão para modificar ou distribuir o Programa ou seus trabalhos derivados. Essas ações são proibidas por lei se você não aceitar esta licença. Portanto, ao modificar ou distribuir o Programa (ou qualquer trabalho baseado no Programa), você indica sua aceitação desta Licença para fazê-lo e todos os seus termos e condições para copiar, distribuir ou modificar o Programa ou trabalhos baseados nele.
+
+6. Cada vez que você redistribuir o Programa (ou qualquer trabalho baseado no Programa), o destinatário receberá automaticamente uma licença do licenciante original para copiar, distribuir ou modificar o Programa, sujeito a estes termos e condições. Você não pode impor nenhuma restrição adicional ao exercício dos direitos dos beneficiários aqui concedidos. Você não é responsável por impor a conformidade de terceiros a esta Licença.
+
+7. Se, como conseqüência de uma decisão judicial ou alegação de violação de patente ou por qualquer outro motivo (não limitado a questões de patentes), forem impostas condições (seja por ordem judicial, acordo ou outro) que contradigam as condições deste Licença, eles não o isentam das condições desta Licença. Se você não puder distribuir de modo a satisfazer simultaneamente suas obrigações sob esta Licença e quaisquer outras obrigações pertinentes, então, como conseqüência, você não poderá distribuir o Programa. Por exemplo, se uma licença de patente não permitir a redistribuição livre de royalties do Programa por todos aqueles que receberem cópias direta ou indiretamente através de você, então a única maneira de satisfazê-la e a esta Licença seria abster-se inteiramente da distribuição da licença. Programa.
+Se qualquer parte desta seção for considerada inválida ou inexeqüível sob qualquer circunstância específica, o saldo da seção deverá ser aplicado e a seção como um todo deve ser aplicada em outras circunstâncias.
+Não é o propósito desta seção induzir você a infringir quaisquer patentes ou outras reivindicações de direitos de propriedade ou a contestar a validade de tais reivindicações; esta seção tem o único propósito de proteger a integridade do sistema de distribuição de software livre, que é implementado por práticas de licença pública. Muitas pessoas fizeram contribuições generosas para a ampla gama de softwares distribuídos por esse sistema, confiando na aplicação consistente desse sistema; cabe ao autor / doador decidir se ele ou ela está disposto a distribuir software através de qualquer outro sistema e um licenciado não pode impor essa escolha.
+Esta seção destina-se a esclarecer completamente o que se acredita ser uma consequência do restante desta Licença.
+
+8. Se a distribuição e / ou uso do Programa for restrito em determinados países por patentes ou por interfaces protegidas por direitos autorais, o detentor original dos direitos autorais que colocar o Programa sob esta Licença poderá adicionar uma limitação explícita de distribuição geográfica, excluindo esses países. é permitido apenas em ou entre países não excluídos. Nesse caso, esta Licença incorpora a limitação como se estivesse escrita no corpo desta Licença.
+
+9. A Free Software Foundation pode publicar versões revisadas e / ou novas da Licença Pública Geral de tempos em tempos. Essas novas versões serão semelhantes em espírito à versão atual, mas podem diferir em detalhes para abordar novos problemas ou preocupações.
+Cada versão recebe um número de versão distinto. Se o Programa especificar um número de versão desta Licença que se aplique a ele e "qualquer versão posterior", você terá a opção de seguir os termos e condições dessa versão ou de qualquer versão posterior publicada pela Free Software Foundation. Se o Programa não especificar um número de versão desta Licença, você poderá escolher qualquer versão já publicada pela Free Software Foundation.
+
+10. Se você deseja incorporar partes do Programa em outros programas livres cujas condições de distribuição são diferentes, escreva para o autor para pedir permissão. Para software que é protegido por direitos autorais da Free Software Foundation, escreva para a Free Software Foundation; às vezes fazemos exceções para isso. Nossa decisão será guiada pelos dois objetivos de preservar o status livre de todos os derivados de nosso software livre e de promover o compartilhamento e a reutilização de software em geral.
+
+SEM GARANTIA
+
+11. COMO O PROGRAMA É LICENCIADO GRATUITAMENTE, NÃO HÁ NENHUMA GARANTIA PARA O PROGRAMA, NA EXTENSÃO PERMITIDA PELA LEGISLAÇÃO APLICÁVEL. EXCETO QUANDO, DE OUTRA FORMA, FORMADO POR ESCRITO, OS TITULARES DOS DIREITOS DE AUTOR E / OU OUTRAS PARTES FORNECEM O PROGRAMA "NO ESTADO EM QUE SE ENCONTRA", SEM GARANTIA DE QUALQUER TIPO, EXPRESSA OU IMPLÍCITA, INCLUINDO, MAS NÃO SE LIMITANDO ÀS GARANTIAS IMPLÍCITAS DE COMERCIALIZAÇÃO E ADEQUAÇÃO A UM FIM ESPECÍFICO . TODO O RISCO QUANTO À QUALIDADE E DESEMPENHO DO PROGRAMA É COM VOCÊ. SE O PROGRAMA FOR PROFUNDO DEFEITO, VOCÊ ASSUME O CUSTO DE TODOS OS SERVIÇOS, REPAROS OU CORREÇÕES NECESSÁRIOS.
+12. EM CASO ALGUM, A MENOS QUE EXIGIDO PELA LEI APLICÁVEL OU ACORDADO POR ESCRITO, QUALQUER TITULAR DOS DIREITOS AUTORAIS, OU QUALQUER OUTRA PARTE QUE POSSA MODIFICAR E / OU REDISTRIZAR O PROGRAMA COMO PERMITIDO ACIMA, SERÁ RESPONSÁVEL POR DANOS, INCLUINDO QUAISQUER DADOS GERAIS, ESPECIAIS, DANOS INCIDENTAIS OU CONSEQÜENCIAIS DECORRENTES DO USO OU INCAPACIDADE DE USAR O PROGRAMA (INCLUINDO, MAS NÃO SE LIMITANDO À PERDA DE DADOS OU DADOS QUE TIVER SIDO INCORRECIDAS OU PERDAS SUSTENTADAS POR VOCÊ OU TERCEIROS OU FALHA DO PROGRAMA DE OPERAR COM OUTROS PROGRAMAS) , MESMO QUE O TITULAR OU OUTRA PARTE TENHA SIDO AVISADO DA POSSIBILIDADE DE TAIS DANOS.
+FIM DOS TERMOS E CONDIÇÕES
+Como aplicar estes termos aos seus novos programas
+Se você desenvolver um novo programa e quiser que ele seja da maior utilidade possível para o público, a melhor maneira de conseguir isso é torná-lo um software livre que todos possam redistribuir e alterar nesses termos.
+Para isso, anexe os seguintes avisos ao programa. É mais seguro anexá-los ao início de cada arquivo de origem para transmitir de forma mais eficaz a exclusão da garantia; e cada arquivo deve ter pelo menos a linha "copyright" e um ponteiro para onde o aviso completo é encontrado.
+uma linha para dar nome ao programa e uma ideia do que ele faz.
+Copyright (C) yyyy nome do autor
+
+Este programa é software livre; você pode redistribuí-lo e / ou modificá-lo sob os termos da Licença Pública Geral GNU, conforme publicada pela Free Software Foundation; ou a versão 2 da Licença, ou (a seu critério) qualquer versão posterior.
+
+Este programa é distribuído na esperança de que seja útil, mas SEM QUALQUER GARANTIA; sem mesmo a garantia implícita de COMERCIALIZAÇÃO ou ADEQUAÇÃO A UM DETERMINADO FIM. Veja a Licença Pública Geral GNU para mais detalhes.
+
+Você deve ter recebido uma cópia da Licença Pública Geral GNU junto com este programa; se não, escreva para a Free Software Foundation, Inc., 51 Franklin Street, Quinta Andar, Boston, MA 02110-1301, EUA.
+Adicione também informações sobre como contatá-lo por correio eletrônico e em papel.
+Se o programa for interativo, faça com que seja emitido um aviso breve como este quando ele for iniciado em um modo interativo:
+Gnomovision versão 69, Copyright (C) ano nome do autor
+Gnomovision vem com ABSOLUTAMENTE NENHUMA GARANTIA; para detalhes
+digite \ `show w '. Este é um software livre e você é bem-vindo
+redistribuí-lo sob certas condições; tipo \ `show c '
+para detalhes.
+Os comandos hipotéticos \ `show w 'e \' show c 'devem mostrar as partes apropriadas da Licença Pública Geral. Claro, os comandos que você usa podem ser chamados de algo diferente de \ `show w 'e \' show c '; eles podem até ser cliques do mouse ou itens de menu - o que melhor se adequar ao seu programa.
+Você também deve obter seu empregador (se você trabalha como programador) ou sua escola, se houver, para assinar um "aviso de direitos autorais" para o programa, se necessário. Aqui está uma amostra; altere os nomes:
+Yoyodyne, Inc., aqui se isenta de todos os direitos autorais sobre o programa \ `Gnomovision '(que faz passagens em compiladores) escrito por James Hacker.
+
+assinatura de Ty Coon, 1 de abril de 1989
+Ty Coon, presidente da vice
+Esta Licença Pública Geral não permite incorporar seu programa em programas proprietários. Se o seu programa é uma biblioteca de sub-rotinas, você pode considerar mais útil permitir a vinculação de aplicativos proprietários à biblioteca. Se isto é o que você quer fazer, use a Licença Pública Geral Menor do GNU ao invés desta Licença.
+
+
+
+PDVRLICENSE_J
+    else 
+	cat <<PDVRLICENSE_U
+
+Contrato de licença
+
+Este Contrato fornece os termos e condições para concessão de licença da Brother Industries, Ltd ("Brother"). Brother, que detém todos os direitos autorais do software que é distribuído com este Contrato ("Software") para seus destinatários ("Usuário"), para uso do Software. O usuário terá o direito de usar o Software somente de acordo com os termos e condições deste Contrato. Qualquer uso pelo usuário do software será considerado como seu contrato.
+Nota:
+Por favor, clique em "Eu aceito", mantendo pressionada a tecla "Shift" ou clique com o botão direito do mouse em "Aceito" e selecione "Salvar destino como ,,," no menu.
+
+
+A Brother retém todo e qualquer direito autoral do Software. Em nenhum caso, este Contrato deverá ser interpretado de forma a atribuir ou, de outra forma, transferir da Brother para o Usuário quaisquer direitos autorais ou outros direitos de propriedade intelectual para todo ou qualquer parte do Software.
+A Brother concede ao Usuário uma licença não exclusiva: para reproduzir e / ou distribuir (via Internet ou de qualquer outra forma) o Software. Além disso, a Brother concede ao Usuário uma licença não exclusiva para modificar, alterar, traduzir ou preparar trabalhos derivados do Software e para reproduzir e distribuir (via Internet ou de qualquer outra forma) tal modificação, alteração, tradução ou outros trabalhos derivados para qualquer finalidade.
+A licença do Software da Brother é concedida "COMO ESTÁ". A BROTHER NÃO OFERECE QUAISQUER GARANTIAS COM RESPEITO AO SOFTWARE, EXPRESSAS OU IMPLÍCITAS, INCLUINDO, MAS NÃO SE LIMITANDO À GARANTIA, PELA QUALIDADE, COMERCIALIZAÇÃO, ADEQUAÇÃO A UM DETERMINADO FIM OU NÃO INFRACÇÃO. A Brother não se responsabiliza por contrato, ato ilícito (incluindo negligência ou violação do dever legal) ou por qualquer interrupção de uso, perda de dados ou por qualquer perda ou dano indireto, incidental, punitivo ou consequente, ou por qualquer perda de lucro , receita, dados, boa vontade ou economia antecipada que surjam sob, fora ou em contemplação deste Contrato ou que surjam de qualquer outra forma devido a qualquer erro, inexatidão ou defeito no Software, mesmo que a Brother tenha sido avisada da possibilidade de tal perda ou dano . Além disso, a Brother não terá nenhuma responsabilidade de divulgar e / ou distribuir o código-fonte do Software ao Usuário sob quaisquer circunstâncias. Em nenhum caso, a licença acima da Brother de modificar, alterar, traduzir ou preparar trabalhos derivados do Software deve ser interpretada como um contrato ou compromisso implícito da Brother de divulgar e / ou distribuir o código fonte do Software.
+O Software contém os programas licenciados sob os termos e condições da GNU GENERAL PUBLIC LICENSE Versão 2. Não obstante o disposto acima, os termos e condições da GNU GENERAL PUBLIC LICENSE Versão 2 são aplicados a tais programas. Tais programas são armazenados no seguinte diretório e seus subdiretórios.
+<cupswrapper>
+LICENÇA PÚBLICA GERAL GNU
+Versão 2, junho de 1991
+Copyright (C) 1989, 1991 Free Software Foundation, Inc.
+51 Franklin Street, quinto andar, Boston, MA 02110-1301, EUA
+
+
+
+Todos têm permissão para copiar e distribuir cópias textuais
+deste documento de licença, mas alterá-lo não é permitido.
+Preâmbulo
+As licenças da maioria dos softwares são projetadas para tirar sua liberdade de compartilhá-las e alterá-las. Por outro lado, a Licença Pública Geral GNU visa garantir a sua liberdade de compartilhar e alterar o software livre - para garantir que o software seja gratuito para todos os seus usuários. Esta Licença Pública Geral aplica-se à maioria dos softwares da Free Software Foundation e a qualquer outro programa cujos autores se comprometam a usá-la. (Alguns outros softwares da Free Software Foundation são cobertos pela Licença Pública Geral Menor do GNU.) Você também pode aplicá-la aos seus programas.
+Quando falamos de software livre, estamos nos referindo à liberdade, não ao preço. Nossas Licenças Públicas Gerais destinam-se a garantir que você tenha a liberdade de distribuir cópias de software livre (e cobrar por esse serviço, se desejar), receber o código-fonte ou obtê-lo, se quiser, alterar o código-fonte software ou usar partes dele em novos programas gratuitos; e que você sabe que pode fazer essas coisas.
+Para proteger os seus direitos, precisamos fazer restrições que proíbam que alguém lhe negue esses direitos ou peça que você renuncie aos direitos. Essas restrições se traduzem em certas responsabilidades para você, se você distribuir cópias do software ou modificá-lo.
+Por exemplo, se você distribuir cópias de tal programa, seja gratuitamente ou por uma taxa, você deve fornecer aos destinatários todos os direitos que você possui. Você deve se certificar de que eles também recebam ou possam obter o código-fonte. E você deve mostrar a eles estes termos para que eles conheçam seus direitos.
+Protegemos os seus direitos em dois passos: (1) copyright do software e (2) oferecemos-lhe esta licença que lhe dá permissão legal para copiar, distribuir e / ou modificar o software.
+Além disso, para a proteção de cada autor e a nossa, queremos ter certeza de que todos entendam que não há garantia para este software gratuito. Se o software for modificado por outra pessoa e transmitido, queremos que seus destinatários saibam que o que eles têm não é o original, para que quaisquer problemas introduzidos por outros não reflitam sobre a reputação dos autores originais.
+Finalmente, qualquer programa gratuito é constantemente ameaçado por patentes de software. Desejamos evitar o perigo de que os redistribuidores de um programa gratuito obtenham individualmente licenças de patente, tornando o programa proprietário. Para evitar isso, deixamos claro que qualquer patente deve ser licenciada para uso livre de todos ou não licenciada.
+Os termos e condições precisos para cópia, distribuição e modificação seguem.
+TERMOS E CONDIÇÕES PARA CÓPIA, DISTRIBUIÇÃO E MODIFICAÇÃO
+
+0. Esta Licença se aplica a qualquer programa ou outro trabalho que contenha um aviso colocado pelo detentor dos direitos autorais dizendo que ele pode ser distribuído sob os termos desta Licença Pública Geral. O "Programa", abaixo, refere-se a qualquer programa ou trabalho, e um "trabalho baseado no Programa" significa o Programa ou qualquer trabalho derivado sob a lei de direitos autorais: isto é, um trabalho contendo o Programa ou uma parte dele. ele, seja textualmente ou com modificações e / ou traduzido para outro idioma. (Doravante, a tradução está incluída sem limitação no termo "modificação".) Cada licenciado é endereçado como "você".
+Atividades que não sejam cópia, distribuição e modificação não são cobertas por esta Licença; eles estão fora de seu escopo. O ato de executar o Programa não é restrito, e a saída do Programa é coberta somente se o seu conteúdo constituir um trabalho baseado no Programa (independente de ter sido feito executando o Programa). Se isso é verdade depende do que o Programa faz.
+
+1. Você pode copiar e distribuir cópias integrais do código-fonte do Programa à medida que você o recebe, em qualquer meio, desde que publique de maneira visível e apropriada em cada cópia um aviso de direitos autorais e uma isenção de garantia apropriados; manter intactos todos os avisos que se referem a esta Licença e à ausência de qualquer garantia; e dar a qualquer outro destinatário do Programa uma cópia desta Licença junto com o Programa.
+Você pode cobrar uma taxa pelo ato físico de transferir uma cópia e pode, a seu critério, oferecer proteção de garantia em troca de uma taxa.
+
+2. Você pode modificar sua cópia ou cópias do Programa ou de qualquer parte dele, formando assim um trabalho baseado no Programa, e copiar e distribuir tais modificações ou trabalhar sob os termos da Seção 1 acima, desde que você também atenda a todas estas condições:
+
+a) Você deve fazer com que os arquivos modificados carreguem avisos proeminentes informando que você alterou os arquivos e a data de qualquer alteração.
+
+b) Você deve fazer com que qualquer trabalho que você distribua ou publique, que no todo ou em parte contenha ou seja derivado do Programa ou de qualquer parte dele, seja licenciado como um todo sem custo para todos os terceiros sob os termos desta Licença. .
+
+c) Se o programa modificado normalmente lê os comandos interativamente quando executado, você deve fazer com que ele, quando iniciado para tal uso interativo da forma mais comum, imprima ou exiba um anúncio incluindo um aviso de copyright apropriado e um aviso de que não há garantia (ou então, dizendo que você fornece uma garantia) e que os usuários podem redistribuir o programa sob essas condições e dizendo ao usuário como visualizar uma cópia desta Licença. (Exceção: se o Programa em si é interativo, mas normalmente não imprime tal anúncio, seu trabalho baseado no Programa não é necessário para imprimir um anúncio.)
+Esses requisitos se aplicam ao trabalho modificado como um todo. Se seções identificáveis ​​desse trabalho não forem derivadas do Programa e puderem ser razoavelmente consideradas trabalhos independentes e separados em si mesmos, então essa Licença e seus termos não se aplicarão a essas seções quando você as distribuir como trabalhos separados. Mas quando você distribui as mesmas seções como parte de um todo que é um trabalho baseado no Programa, a distribuição do todo deve estar nos termos desta Licença, cujas permissões para outros licenciados se estendem para o todo, e assim para cada e cada parte, independentemente de quem escreveu.
+Assim, não é a intenção desta seção reivindicar direitos ou contestar seus direitos ao trabalho escrito inteiramente por você; em vez disso, a intenção é exercer o direito de controlar a distribuição de trabalhos derivados ou coletivos baseados no Programa.
+Além disso, a mera agregação de outro trabalho não baseado no Programa com o Programa (ou com um trabalho baseado no Programa) em um volume de armazenamento ou meio de distribuição não coloca o outro trabalho sob o escopo desta Licença.
+
+3. Você pode copiar e distribuir o Programa (ou um trabalho baseado nele, sob a Seção 2) em código objeto ou forma executável sob os termos das Seções 1 e 2 acima, desde que você também faça o seguinte:
+
+a) Acompanhe-o com o código fonte completo correspondente, legível por máquina, que deve ser distribuído sob os termos das Seções 1 e 2 acima em um meio normalmente usado para troca de software; ou,
+
+b) Acompanhá-lo com uma oferta por escrito, válida por pelo menos três anos, para dar a terceiros, por uma taxa não mais do que seu custo de distribuição de fontes físicas, uma cópia completa legível por máquina do código-fonte correspondente. distribuído sob os termos das Seções 1 e 2 acima em um meio normalmente usado para troca de software; ou,
+
+c) Acompanhe-a com as informações recebidas sobre a oferta de distribuição do código-fonte correspondente. (Esta alternativa é permitida apenas para distribuição não comercial e somente se você recebeu o programa em código objeto ou forma executável com tal oferta, de acordo com a Subseção b acima.)
+O código-fonte de um trabalho significa a forma preferida do trabalho para fazer modificações nele. Para um trabalho executável, o código-fonte completo significa todo o código-fonte de todos os módulos que ele contém, além de quaisquer arquivos de definição de interface associados, além dos scripts usados ​​para controlar a compilação e a instalação do executável. No entanto, como uma exceção especial, o código-fonte distribuído não precisa incluir nada que é normalmente distribuído (em forma de origem ou binária) com os principais componentes (compilador, kernel e assim por diante) do sistema operacional no qual o executável é executado. a menos que esse componente acompanhe o executável.
+Se a distribuição de código executável ou de objeto for feita oferecendo acesso a cópia de um local designado, a oferta de acesso equivalente para copiar o código-fonte do mesmo local conta como distribuição do código-fonte, mesmo que terceiros não sejam obrigados a copiar o código-fonte. fonte junto com o código objeto.
+
+4. Você não pode copiar, modificar, sublicenciar ou distribuir o Programa, exceto conforme expressamente previsto nesta Licença. Qualquer tentativa de copiar, modificar, sublicenciar ou distribuir o Programa é nula e terminará automaticamente seus direitos sob esta Licença. No entanto, as partes que receberam cópias, ou direitos, de você sob esta Licença não terão suas licenças terminadas, desde que essas partes permaneçam em total conformidade.
+
+5. Você não é obrigado a aceitar esta Licença, desde que você não a tenha assinado. No entanto, nada mais lhe concede permissão para modificar ou distribuir o Programa ou seus trabalhos derivados. Essas ações são proibidas por lei se você não aceitar esta licença. Portanto, ao modificar ou distribuir o Programa (ou qualquer trabalho baseado no Programa), você indica sua aceitação desta Licença para fazê-lo e todos os seus termos e condições para copiar, distribuir ou modificar o Programa ou trabalhos baseados nele.
+
+6. Cada vez que você redistribuir o Programa (ou qualquer trabalho baseado no Programa), o destinatário receberá automaticamente uma licença do licenciante original para copiar, distribuir ou modificar o Programa, sujeito a estes termos e condições. Você não pode impor nenhuma restrição adicional ao exercício dos direitos dos beneficiários aqui concedidos. Você não é responsável por impor a conformidade de terceiros a esta Licença.
+
+7. Se, como conseqüência de uma decisão judicial ou alegação de violação de patente ou por qualquer outro motivo (não limitado a questões de patentes), forem impostas condições (seja por ordem judicial, acordo ou outro) que contradigam as condições deste Licença, eles não o isentam das condições desta Licença. Se você não puder distribuir de modo a satisfazer simultaneamente suas obrigações sob esta Licença e quaisquer outras obrigações pertinentes, então, como conseqüência, você não poderá distribuir o Programa. Por exemplo, se uma licença de patente não permitir a redistribuição livre de royalties do Programa por todos aqueles que receberem cópias direta ou indiretamente através de você, então a única maneira de satisfazê-la e a esta Licença seria abster-se inteiramente da distribuição da licença. Programa.
+Se qualquer parte desta seção for considerada inválida ou inexeqüível sob qualquer circunstância específica, o saldo da seção deverá ser aplicado e a seção como um todo deve ser aplicada em outras circunstâncias.
+Não é o propósito desta seção induzir você a infringir quaisquer patentes ou outras reivindicações de direitos de propriedade ou a contestar a validade de tais reivindicações; esta seção tem o único propósito de proteger a integridade do sistema de distribuição de software livre, que é implementado por práticas de licença pública. Muitas pessoas fizeram contribuições generosas para a ampla gama de softwares distribuídos por esse sistema, confiando na aplicação consistente desse sistema; cabe ao autor / doador decidir se ele ou ela está disposto a distribuir software através de qualquer outro sistema e um licenciado não pode impor essa escolha.
+Esta seção destina-se a esclarecer completamente o que se acredita ser uma consequência do restante desta Licença.
+
+8. Se a distribuição e / ou uso do Programa for restrito em determinados países por patentes ou por interfaces protegidas por direitos autorais, o detentor original dos direitos autorais que colocar o Programa sob esta Licença poderá adicionar uma limitação explícita de distribuição geográfica, excluindo esses países. é permitido apenas em ou entre países não excluídos. Nesse caso, esta Licença incorpora a limitação como se estivesse escrita no corpo desta Licença.
+
+9. A Free Software Foundation pode publicar versões revisadas e / ou novas da Licença Pública Geral de tempos em tempos. Essas novas versões serão semelhantes em espírito à versão atual, mas podem diferir em detalhes para abordar novos problemas ou preocupações.
+Cada versão recebe um número de versão distinto. Se o Programa especificar um número de versão desta Licença que se aplique a ele e "qualquer versão posterior", você terá a opção de seguir os termos e condições dessa versão ou de qualquer versão posterior publicada pela Free Software Foundation. Se o Programa não especificar um número de versão desta Licença, você poderá escolher qualquer versão já publicada pela Free Software Foundation.
+
+10. Se você deseja incorporar partes do Programa em outros programas livres cujas condições de distribuição são diferentes, escreva para o autor para pedir permissão. Para software que é protegido por direitos autorais da Free Software Foundation, escreva para a Free Software Foundation; às vezes fazemos exceções para isso. Nossa decisão será guiada pelos dois objetivos de preservar o status livre de todos os derivados de nosso software livre e de promover o compartilhamento e a reutilização de software em geral.
+
+SEM GARANTIA
+11. COMO O PROGRAMA É LICENCIADO GRATUITAMENTE, NÃO HÁ NENHUMA GARANTIA PARA O PROGRAMA, NA EXTENSÃO PERMITIDA PELA LEGISLAÇÃO APLICÁVEL. EXCETO QUANDO, DE OUTRA FORMA, FORMADO POR ESCRITO, OS TITULARES DOS DIREITOS DE AUTOR E / OU OUTRAS PARTES FORNECEM O PROGRAMA "NO ESTADO EM QUE SE ENCONTRA", SEM GARANTIA DE QUALQUER TIPO, EXPRESSA OU IMPLÍCITA, INCLUINDO, MAS NÃO SE LIMITANDO ÀS GARANTIAS IMPLÍCITAS DE COMERCIALIZAÇÃO E ADEQUAÇÃO A UM FIM ESPECÍFICO . TODO O RISCO QUANTO À QUALIDADE E DESEMPENHO DO PROGRAMA É COM VOCÊ. SE O PROGRAMA FOR PROFUNDO DEFEITO, VOCÊ ASSUME O CUSTO DE TODOS OS SERVIÇOS, REPAROS OU CORREÇÕES NECESSÁRIOS.
+
+12. EM CASO ALGUM, A MENOS QUE EXIGIDO PELA LEI APLICÁVEL OU ACORDADO POR ESCRITO, QUALQUER TITULAR DOS DIREITOS AUTORAIS, OU QUALQUER OUTRA PARTE QUE POSSA MODIFICAR E / OU REDISTRIZAR O PROGRAMA COMO PERMITIDO ACIMA, SERÁ RESPONSÁVEL POR DANOS, INCLUINDO QUAISQUER DADOS GERAIS, ESPECIAIS, DANOS INCIDENTAIS OU CONSEQÜENCIAIS DECORRENTES DO USO OU INCAPACIDADE DE USAR O PROGRAMA (INCLUINDO, MAS NÃO SE LIMITANDO À PERDA DE DADOS OU DADOS QUE TIVER SIDO INCORRECIDAS OU PERDAS SUSTENTADAS POR VOCÊ OU TERCEIROS OU FALHA DO PROGRAMA DE OPERAR COM OUTROS PROGRAMAS) , MESMO QUE O TITULAR OU OUTRA PARTE TENHA SIDO AVISADO DA POSSIBILIDADE DE TAIS DANOS.
+FIM DOS TERMOS E CONDIÇÕES
+Como aplicar estes termos aos seus novos programas
+Se você desenvolver um novo programa e quiser que ele seja da maior utilidade possível para o público, a melhor maneira de conseguir isso é torná-lo um software livre que todos possam redistribuir e alterar nesses termos.
+Para isso, anexe os seguintes avisos ao programa. É mais seguro anexá-los ao início de cada arquivo de origem para transmitir de forma mais eficaz a exclusão da garantia; e cada arquivo deve ter pelo menos a linha "copyright" e um ponteiro para onde o aviso completo é encontrado.
+uma linha para dar nome ao programa e uma ideia do que ele faz.
+Copyright (C) yyyy nome do autor
+
+Este programa é software livre; você pode redistribuí-lo e / ou modificá-lo sob os termos da Licença Pública Geral GNU, conforme publicada pela Free Software Foundation; ou a versão 2 da Licença, ou (a seu critério) qualquer versão posterior.
+
+Este programa é distribuído na esperança de que seja útil, mas SEM QUALQUER GARANTIA; sem mesmo a garantia implícita de COMERCIALIZAÇÃO ou ADEQUAÇÃO A UM DETERMINADO FIM. Veja a Licença Pública Geral GNU para mais detalhes.
+
+Você deve ter recebido uma cópia da Licença Pública Geral GNU junto com este programa; se não, escreva para a Free Software Foundation, Inc., 51 Franklin Street, Quinta Andar, Boston, MA 02110-1301, EUA.
+Adicione também informações sobre como contatá-lo por correio eletrônico e em papel.
+Se o programa for interativo, faça com que seja emitido um aviso breve como este quando ele for iniciado em um modo interativo:
+Gnomovision versão 69, Copyright (C) ano nome do autor
+Gnomovision vem com ABSOLUTAMENTE NENHUMA GARANTIA; para detalhes
+digite \ `show w '. Este é um software livre e você é bem-vindo
+redistribuí-lo sob certas condições; tipo \ `show c '
+para detalhes.
+Os comandos hipotéticos \ `show w 'e \' show c 'devem mostrar as partes apropriadas da Licença Pública Geral. Claro, os comandos que você usa podem ser chamados de algo diferente de \ `show w 'e \' show c '; eles podem até ser cliques do mouse ou itens de menu - o que melhor se adequar ao seu programa.
+Você também deve obter seu empregador (se você trabalha como programador) ou sua escola, se houver, para assinar um "aviso de direitos autorais" para o programa, se necessário. Aqui está uma amostra; altere os nomes:
+Yoyodyne, Inc., aqui se isenta de todos os direitos autorais sobre o programa \ `Gnomovision '(que faz passagens em compiladores) escrito por James Hacker.
+
+assinatura de Ty Coon, 1 de abril de 1989
+Ty Coon, presidente da vice
+Esta Licença Pública Geral não permite incorporar seu programa em programas proprietários. Se o seu programa é uma biblioteca de sub-rotinas, você pode considerar mais útil permitir a vinculação de aplicativos proprietários à biblioteca. Se isto é o que você quer fazer, use a Licença Pública Geral Menor do GNU ao invés desta Licença.
+
+
+PDVRLICENSE_U
+    fi
+    
+}
+
+
+
+TIMEOUT=30
+
+
+WGET_OP="-T 10 -nd"
+WGET_OP2="-nd -T 10 -t 1"
+
+DBG_MSG(){
+  if [ "$DEBUG_MSG" = 1 ];then
+     echo -e ${COLOR3}"DEBUGMSG : $1"${MONO}
+  fi
+}
+
+MESSAGE(){
+  if [ "$MSG" = 1 ];then
+     echo -e ${COLOR3}"$1"${MONO}
+  fi
+}
+
+install_done=no
+preproc_done=''
+postproc_done=''
+PREPROC=''
+POSTPROC=''
+
+pre_install_sweep(){
+  DBG_MSG pre_install_sweep
+  ORGC="/etc/init.d/cups"
+  ORGL="/etc/init.d/lpd"
+  ORGLN="/etc/init.d/lprng"
+  SYMLNC="cups -> /etc/init.d/cupsys"
+  SYMLNL="lpd -> /etc/init.d/cupsys"
+  SYMLNLN="lprng -> /etc/init.d/cupsys"
+  
+  if [ "$(ls -al $ORGC  2> /dev/null | grep ^l | grep "$SYMLNC" )" != '' ] 
+  then 
+    rm -f $ORGC   2> /dev/null
+  fi
+  if [ "$(ls -al $ORGL  2> /dev/null | grep ^l | grep "$SYMLNL" )" != '' ]
+  then 
+    rm -f $ORGL   2> /dev/null
+  fi
+  if [ "$(ls -al $ORGLN  2> /dev/null | grep ^l | grep "$SYMLNLN")" != '' ]
+  then 
+    rm -f $ORGLN   2> /dev/null
+  fi
+}
+
+post_install_sweep(){
+  DBG_MSG post_install_sweep
+    if [ ! -d ${wkdir}/${modelnhuc} ];then
+      if [ -f ${wkdir}/${modelnhuc} ];then
+         rm -f  ${wkdir}/${modelnhuc}   2> /dev/null
+      fi
+    fi
+}
+
+
+#
+#  get inf file
+#    chaged values :
+#      ${modelnhuc}
+#      ${fulpath}
+#
+get_inf_file(){
+  SUFFIX1="N C D DN DW DWN DWT CN CW CDN CD CDW CDWT DNLT JN J CLN CLWN WR"
+  DBG_MSG get_inf_file
+
+  if [ $NODOWNLOAD = 1 ];then
+    cp  $INFPATH  ${wkdir}
+    modelnhuc=$MODEL
+  elif [ $NODOWNLOAD = 2 ];then
+    modelnhuc=$MODEL
+  else
+
+    inputmodel=$1
+    modelnhuc=$(echo $inputmodel | tr "[a-z]" "[A-Z]" | tr -d '-')
+
+    if [ "${modelnhuc}" = '' ];then
+      echo ERROR :$inputmodel , $1   ,  ${modelnhuc}
+      #DBG_MSG  "exit 1"
+      exit 0
+    fi
+
+    fulpath=$URL_INF/${modelnhuc}
+
+    dlresult=IDENTIC
+    if [ $infcheck = 0 ] && [ $HIDE_INF = NO ];then
+      MESSAGE  "wget $WGET_OP $CACHEFLG -P ${wkdir} $fulpath"
+    fi
+  fi
+  wget $WGET_OP $CACHEFLG -P ${wkdir} $fulpath    > /dev/null 2> /dev/null 
+
+  #--------------------------------------   
+  
+  if [ ! -f ${wkdir}/${modelnhuc} ];then
+     #     DCP315C -> DCP315CN
+     dlresult=APPROX1
+     modelnhuc2=$(echo $inputmodel | tr "[a-z]" "[A-Z]" | tr -d '-' |\
+		sed -e s/"[A-Z][A-Z][A-Z][A-Z]$"/""/g         \
+		    -e s/"[A-Z][A-Z][A-Z]$"/""/g              \
+		    -e s/"[A-Z][A-Z]$"/""/g                   \
+                    -e s/"[A-Z]$"/""/g )
+
+     for suffix in $SUFFIX1
+     do
+       modelnhuc=${modelnhuc2}${suffix}
+
+       if [ "${modelnhuc}" != '' ];then
+         fulpath=$URL_INF/${modelnhuc}
+         if [ $infcheck = 0 ] && [ $HIDE_INF = NO ];then 
+	   MESSAGE "wget $WGET_OP $CACHEFLG -P ${wkdir} $fulpath"
+	 fi
+	 wget $WGET_OP $CACHEFLG -P ${wkdir} $fulpath > /dev/null 2> /dev/null 
+         if [ $? = '0' ];then 
+           break
+         fi
+       fi  
+       modelnhuc='___not_found___'
+     done
+  fi
+
+  #--------------------------------------   
+  if [ ! -f ${wkdir}/${modelnhuc} ];then
+    #  DCP315C  -> DCP315
+    dlresult=APPROX2
+    modelnhuc=$(echo $inputmodel | tr "[a-z]" "[A-Z]" | tr -d '-' |\
+		sed -e s/"[A-Z][A-Z][A-Z][A-Z]$"/""/g         \
+		    -e s/"[A-Z][A-Z][A-Z]$"/""/g              \
+		    -e s/"[A-Z][A-Z]$"/""/g                   \
+                    -e s/"[A-Z]$"/""/g )
+
+		    
+    if [ "${modelnhuc}" != '' ];then
+      fulpath=$URL_INF/${modelnhuc}
+      if [ $infcheck = 0 ] && [ $HIDE_INF = NO ];then
+	MESSAGE "wget $WGET_OP $CACHEFLG -P ${wkdir} $fulpath"
+      fi
+      wget $WGET_OP $CACHEFLG -P ${wkdir} $fulpath     > /dev/null 2> /dev/null 
+    fi
+  fi
+
+  #--------------------------------------   
+  if [ ! -f "${wkdir}/${modelnhuc}" ];then
+    #    DCP315C   -> DCP310C   
+    dlresult=APPROX3
+    modelnhuc=$(echo $inputmodel | \
+		sed -e s/"[0-9]$"/"0"/g  \
+		    -e s/"[0-9]C"/"0C"/g \
+		    -e s/"[0-9]D"/"0D"/g \
+		    -e s/"[0-9]W"/"0W"/g \
+		    -e s/"[0-9]N"/"0N"/g )
+    if [ "${modelnhuc}" != '' ];then
+      fulpath=$URL_INF/${modelnhuc}
+      #echo wget $WGET_OP $CACHEFLG -P ${wkdir} $fulpath
+      if [ $infcheck = 0 ] && [ $HIDE_INF = NO ];then 
+        MESSAGE "wget $WGET_OP $CACHEFLG -P ${wkdir} $fulpath"
+      fi
+      wget $WGET_OP $CACHEFLG -P ${wkdir} $fulpath     > /dev/null 2> /dev/null 
+    fi
+  fi
+  #--------------------------------------   
+
+  if [ ! -f ${wkdir}/${modelnhuc} ];then
+    #    DCP315C   -> DCP310CN
+    dlresult=APPROX4
+    modelnhuc2=$(echo $inputmodel | tr "[a-z]" "[A-Z]" | tr -d '-' |\
+		sed -e s/"[A-Z][A-Z][A-Z][A-Z]$"/""/g         \
+		    -e s/"[A-Z][A-Z][A-Z]$"/""/g              \
+		    -e s/"[A-Z][A-Z]$"/""/g                   \
+                    -e s/"[A-Z]$"/""/g                       |\
+                sed s/"[0-9]$"/"0"/g )
+
+    for suffix in $SUFFIX1
+    do
+       modelnhuc=${modelnhuc2}${suffix}
+       if [ "${modelnhuc}" != '' ];then
+         fulpath=$URL_INF/${modelnhuc}
+         if [ $infcheck = 0 ] && [ $HIDE_INF = NO ];then 
+	   MESSAGE "wget $WGET_OP $CACHEFLG -P ${wkdir} $fulpath"
+	 fi
+	 wget $WGET_OP $CACHEFLG -P ${wkdir} $fulpath > /dev/null 2> /dev/null 
+         if [ $? = '0' ];then 
+           break
+         fi
+       fi  
+       modelnhuc='___not_found___'
+    done 
+  fi
+
+  #--------------------------------------   
+
+  if [ ! -f ${wkdir}/${modelnhuc} ];then
+    #    DCP315C   -> DCP310
+    dlresult=APPROX5
+    modelnhuc=$(echo $inputmodel | tr "[a-z]" "[A-Z]" | tr -d '-' |\
+		sed -e s/"[A-Z][A-Z][A-Z][A-Z]$"/""/g         \
+		    -e s/"[A-Z][A-Z][A-Z]$"/""/g              \
+		    -e s/"[A-Z][A-Z]$"/""/g                   \
+                    -e s/"[A-Z]$"/""/g                       |\
+                sed s/"[0-9]$"/"0"/g )
+
+    if [ "${modelnhuc}" != '' ];then
+      fulpath=$URL_INF/${modelnhuc}
+      if [ $infcheck = 0 ] && [ $HIDE_INF = NO ];then 
+	MESSAGE "wget $WGET_OP $CACHEFLG -P ${wkdir} $fulpath"
+      fi
+      wget $WGET_OP $CACHEFLG -P ${wkdir} $fulpath > /dev/null 2> /dev/null 
+    fi
+    if [ ! -f ${wkdir}/${modelnhuc} ];then
+       modelnhuc='___not_found___'
+
+    fi
+  fi
+
+  #--------------------------------------   
+
+
+
+
+  if [ -f ${wkdir}/${modelnhuc} ];then
+
+    lnk=$(grep "LNK=" ${wkdir}/${modelnhuc} 2>/dev/null | sed s/'LNK='//g)
+    if [ "$lnk" != '' ];then
+      PRODUCT_NAME=$(grep "^\[" ${wkdir}/${modelnhuc} 2>/dev/null | sed -e s/"\["//g -e s/"\]"//g) 
+
+      PREPROC=$(grep "PREPROC=" ${wkdir}/${modelnhuc} 2>/dev/null | \
+                    sed s/"PREPROC="//g | \
+                    sed -e s/^\"//g -e s/\"$//g )
+      POSTPROC=$(grep "POSTPROC=" ${wkdir}/${modelnhuc} 2>/dev/null | \
+                    sed s/"POSTPROC="//g | \
+                    sed -e s/^\"//g -e s/\"$//g )
+      lnk_flag="LINK"
+      LNK_PRINTERNAME=$(grep "PRINTERNAME" ${wkdir}/${modelnhuc} \
+	  2>/dev/null | sed s/"PRINTERNAME="//g )
+      if [ -f ${wkdir}/${modelnhuc} ];then
+         rm -f  ${wkdir}/${modelnhuc}   2> /dev/null
+      fi
+
+      modelnhuc=${lnk}
+      fulpath=$URL_INF/${modelnhuc}
+      if [ $infcheck = 0 ] && [ $HIDE_INF = NO ];then 
+        MESSAGE "wget $WGET_OP $CACHEFLG -P ${wkdir} $fulpath"
+      fi
+      wget $WGET_OP $CACHEFLG -P ${wkdir} $fulpath  > /dev/null 2> /dev/null 
+    fi
+  fi
+
+  if [ "$modelnhuc" = '___not_found___' ];then
+     modelnhuc=''
+  fi
+
+}
+
+
+
+get_packages_name(){
+  DBG_MSG get_packages_name
+  inf=${wkdir}/$1
+  if [ "$PRODUCT_NAME" = '' ];then
+    PRODUCT_NAME=$(grep "\[" $inf 2>/dev/null | sed -e s/"\["//g -e s/"\]"//g) 
+  fi
+  SCANNER_DRV=$(grep "SCANNER_DRV" $inf 2>/dev/null | sed s/"SCANNER_DRV="//g )
+  SCANKEY_DRV=$(grep "SCANKEY_DRV" $inf 2>/dev/null | sed s/"SCANKEY_DRV="//g )
+  PRINTERNAME=$(grep "PRINTERNAME" $inf 2>/dev/null | sed s/"PRINTERNAME="//g )
+  if [ "$SCANNER_DRV" != '' ];then
+     SCANNER_LNK="$SCANNER_DRV".lnk
+     fulpath=$URL_INF/$SCANNER_LNK
+     
+
+     if [ $infcheck = 0 ] && [ $HIDE_INF = NO ];then
+	echo wget  $WGET_OP $CACHEFLG -P ${wkdir} $fulpath 
+     fi
+     wget  $WGET_OP $CACHEFLG -P ${wkdir} $fulpath 2> /dev/null
+  fi
+  if [ "$SCANKEY_DRV" != '' ];then
+     SCANKEY_LNK="$SCANKEY_DRV".lnk
+     fulpath=$URL_INF/$SCANKEY_LNK
+     if [ $infcheck = 0 ] && [ $HIDE_INF = NO ];then
+     	echo wget  $WGET_OP $CACHEFLG -P ${wkdir} $fulpath 
+     fi
+     wget  $WGET_OP $CACHEFLG -P ${wkdir} $fulpath  2> /dev/null
+  fi
+
+  if [ "$PKG" = rpm ];then
+    CUPSFILE=$(grep "PRN_CUP_RPM" $inf 2>/dev/null | sed s/"PRN_CUP_RPM="//g )
+    LPRFILE=$(grep "PRN_LPD_RPM" $inf  2>/dev/null | sed s/"PRN_LPD_RPM="//g )
+    PDRVFILE=$(grep "PRN_DRV_RPM" $inf  2>/dev/null | sed s/"PRN_DRV_RPM="//g )
+    REQ32LIB=$(grep "REQUIRE32LIB" $inf  2>/dev/null| sed s/"REQUIRE32LIB="//g )
+    if [ "$SCANNER_LNK" != '' ];then
+      if [ "$arch" = 'i386' ];then
+        SCANFILE=$(grep "RPM32=" ${wkdir}/"$SCANNER_LNK" | sed s/"RPM32="//g )
+      else
+        SCANFILE=$(grep "RPM64=" ${wkdir}/"$SCANNER_LNK" | sed s/"RPM64="//g )
+      fi
+    fi
+    if [ "$SCANKEY_LNK" != '' ];then
+      if [ "$arch" = 'i386' ];then
+        SKEYFILE=$(grep "RPM32=" ${wkdir}/"$SCANKEY_LNK" | sed s/"RPM32="//g )
+      else
+        SKEYFILE=$(grep "RPM64=" ${wkdir}/"$SCANKEY_LNK" | sed s/"RPM64="//g )
+      fi
+    fi
+
+
+  else
+    CUPSFILE=$(grep "PRN_CUP_DEB" $inf 2>/dev/null | sed s/"PRN_CUP_DEB="//g )
+    LPRFILE=$(grep "PRN_LPD_DEB" $inf  2>/dev/null | sed s/"PRN_LPD_DEB="//g )
+    PDRVFILE=$(grep "PRN_DRV_DEB" $inf  2>/dev/null | sed s/"PRN_DRV_DEB="//g )
+    REQ32LIB=$(grep "REQUIRE32LIB" $inf  2>/dev/null| sed s/"REQUIRE32LIB="//g )
+    if [ "$SCANNER_LNK" != '' ];then
+      if [ "$arch" = 'i386' ];then
+        SCANFILE=$(grep "DEB32=" ${wkdir}/"$SCANNER_LNK" | sed s/"DEB32="//g )
+      else
+        SCANFILE=$(grep "DEB64=" ${wkdir}/"$SCANNER_LNK" | sed s/"DEB64="//g )
+      fi
+    fi
+    if [ "$SCANKEY_LNK" != '' ];then
+      if [ "$arch" = 'i386' ];then
+        SKEYFILE=$(grep "DEB32=" ${wkdir}/"$SCANKEY_LNK" | sed s/"DEB32="//g )
+      else
+        SKEYFILE=$(grep "DEB64=" ${wkdir}/"$SCANKEY_LNK" | sed s/"DEB64="//g )
+      fi
+    fi
+
+  fi
+
+  if [ "$PREPROC" = '' ];then
+    PREPROC=$(grep "PREPROC=" $inf 2>/dev/null | \
+                    sed s/"PREPROC="//g | \
+                    sed -e s/^\"//g -e s/\"$//g )
+  fi
+  if [ "$POSTPROC" = '' ];then
+    POSTPROC=$(grep "POSTPROC=" $inf 2>/dev/null | \
+                    sed s/"POSTPROC="//g | \
+                    sed -e s/^\"//g -e s/\"$//g )
+
+  fi
+
+  if [ -f "$inf" ];then
+    rm -f "$inf"   2> /dev/null
+  fi
+  if [ -f ${wkdir}/"$SCANNER_LNK" ] && [ "$SCANNER_LNK" != '' ];then
+    rm -f ${wkdir}/"$SCANNER_LNK"   2> /dev/null
+  fi
+  if [ -f ${wkdir}/"$SCANKEY_LNK" ] && [ "$SCANKEY_LNK" != '' ];then
+    rm -f ${wkdir}/"$SCANKEY_LNK"   2> /dev/null
+  fi
+}
+
+HOSTDEFAULT="www.brother.com"
+HOSTINFJP=$HOSTDEFAULT
+HOSTINFUS=$HOSTDEFAULT
+HOSTPKGJP=$HOSTDEFAULT
+HOSTPKGUS=$HOSTDEFAULT
+
+DBG_MSG  BROTHERSOLUTIONSCENTOR_HOSTINFJP=$BROTHERSOLUTIONSCENTOR_HOSTINFJP
+DBG_MSG  BROTHERSOLUTIONSCENTOR_HOSTINFUS=$BROTHERSOLUTIONSCENTOR_HOSTINFUS
+DBG_MSG  BROTHERSOLUTIONSCENTOR_HOSTPKGJP=$BROTHERSOLUTIONSCENTOR_HOSTPKGJP
+DBG_MSG  BROTHERSOLUTIONSCENTOR_HOSTPKGUS=$BROTHERSOLUTIONSCENTOR_HOSTPKGUS
+
+if [ "$BROTHERSOLUTIONSCENTOR_HOSTINFJP" != '' ];then
+   HOSTINFJP=$BROTHERSOLUTIONSCENTOR_HOSTINFJP
+fi
+
+if [ "$BROTHERSOLUTIONSCENTOR_HOSTINFUS" != '' ];then
+   HOSTINFUS=$BROTHERSOLUTIONSCENTOR_HOSTINFUS
+fi
+
+if [ "$BROTHERSOLUTIONSCENTOR_HOSTPKGJP" != '' ];then
+   HOSTPKGJP=$BROTHERSOLUTIONSCENTOR_HOSTPKGJP
+fi
+
+if [ "$BROTHERSOLUTIONSCENTOR_HOSTPKGUS" != '' ];then
+   HOSTPKGUS=$BROTHERSOLUTIONSCENTOR_HOSTPKGUS
+fi
+
+
+BASEPATHJP="/pub/bsc/linuxj/"
+BASEPATHUS="/pub/bsc/linux/"
+
+
+
+
+set_host_info(){
+  DBG_MSG set_host_info
+  if [ "$1" = "JPN" ];then
+      URL_INF="http://"${HOSTINFJP}${BASEPATHJP}infs
+      URL_PKG="http://"${HOSTPKGJP}${BASEPATHJP}packages
+  else
+      URL_INF="http://"${HOSTINFUS}${BASEPATHUS}infs
+      URL_PKG="http://"${HOSTPKGUS}${BASEPATHUS}packages
+  fi
+  DBG_MSG "  URL_INF="$URL_INF
+  DBG_MSG "  URL_PKG="$URL_PKG
+}
+
+
+network_check(){
+  netchkpage=$1
+  if [ "${wkdir}" != '' ] && [ "$netchkpage" != '' ];then
+    if [ -f ${wkdir}/$netchkpage ];then
+      rm  ${wkdir}/$netchkpage   2> /dev/null
+    fi
+  fi
+
+  fulpath2="http://"${HOSTINFUS}${BASEPATHUS}infs/$netchkpage
+  wget $WGET_OP2 $CACHEFLG -P ${wkdir} $fulpath2    > /dev/null 2> /dev/null 
+  rcwget=$?
+
+  netaccess=FALSE
+  if [ -f ${wkdir}/$netchkpage ];then
+     netaccess=SUCCESS
+     rm  ${wkdir}/$netchkpage   2> /dev/null
+  fi
+}
+
+drv_get_and_install(){
+  DBG_MSG drv_get_and_install
+  package=$1
+  license=$2
+  default=$3
+  iinstall_result=No
+
+  if [ "$package" != '' ];then
+    echo -e $COLOR4$MESSAGE150$MONO #"You are going to install ...."
+    echo -e $COLOR4"   "$package$MONO
+    if [ "$default" = No ];then
+      echo -e -n $COLOR$MESSAGE160        #"OK\? [y/N]  ->"
+      answer=""
+      read answer
+      echo -e $MONO
+      if [ "$answer" = Y ] || [ "$answer" = y ]; then
+	if ! [ -f "$package" ];then
+	    $license
+	    echo -e -n $COLOR$MESSAGE170        #"Are you agree\? [Y/n] ->"
+	    answer=""
+	    read answer
+	    echo -e $MONO
+	    if [ "$answer" != N ] && [ "$answer" != n ]; then
+		echo wget $WGET_OP $CACHEFLG $URL_PKG/$package
+		wget $WGET_OP $CACHEFLG $URL_PKG/$package
+	    fi
+	    if [ -f "$package" ];then
+               echo -n -e $COLOR4
+	       echo $PKGCMD  $package
+               echo -n -e $MONO
+               if [ "$DEBUG_NOINSTALL" != 'yes' ];then
+                 pre_proc
+	         $PKGCMD  $package
+               else
+                 sleep 1
+               fi
+	       iinstall_result=Yes
+	    fi
+
+	fi
+      fi                            #answer
+    elif [ "$default" = Yes ];then
+      echo -e -n $COLOR$MESSAGE165        #"OK\? [Y/n]  ->"
+      answer=""
+      read answer
+      echo -e $MONO
+      if [ "$answer" != N ] && [ "$answer" != n ]; then
+	 if ! [ -f "$package" ];then
+	    $license
+	    echo -e -n $COLOR$MESSAGE170        #"Are you agree\? [Y/n] ->"
+	    answer=""
+	    read answer
+	    echo -e $MONO
+	    if [ "$answer" != N ] && [ "$answer" != n ]; then
+		echo wget $WGET_OP $CACHEFLG $URL_PKG/$package
+		wget $WGET_OP $CACHEFLG $URL_PKG/$package
+	    fi
+
+	    if [ -f "$package" ];then
+              echo -n -e $COLOR4
+	      echo $PKGCMD  $package
+              echo -n -e $MONO
+              if [ "$DEBUG_NOINSTALL" != 'yes' ];then
+                pre_proc
+	        $PKGCMD  $package
+              else
+                sleep 1
+              fi
+	      iinstall_result=Yes
+	    fi
+	 fi
+      fi                              #answer
+    else             # deault = Force
+      if ! [ -f "$package" ];then
+	 $license
+	 echo -e -n $COLOR$MESSAGE170        #"Are you agree\? [Y/n] ->"
+	 answer=""
+	 read answer
+	 echo -e $MONO
+	 if [ "$answer" != N ] && [ "$answer" != n ]; then
+	    echo wget $WGET_OP $CACHEFLG $URL_PKG/$package
+	    wget $WGET_OP $CACHEFLG $URL_PKG/$package
+	 fi
+       fi
+       if [ -f "$package" ];then
+         echo -n -e $COLOR4
+         echo $PKGCMD  $package
+         echo -n -e $MONO
+         if [ "$DEBUG_NOINSTALL" != 'yes' ];then
+           pre_proc
+	   $PKGCMD  $package
+           iinstall_result=Yes
+         else
+           sleep 1
+         fi
+       fi
+    fi                                #default
+  fi                                  #package
+}
+
+
+make_generic_uninstaller(){
+    DBG_MSG make_generic_uninstaller
+    if [ -f $1 ];then
+	generic_uninstaller=uninstaller_$2
+	cat <<GENERICUNINST   > $generic_uninstaller
+#! /bin/bash
+$RMPKGCMD       $2
+
+$(rmscanlibmodules $3)
+
+GENERICUNINST
+    chmod 744 $generic_uninstaller
+    fi
+}
+
+make_brscan_uninstaller(){
+    DBG_MSG make_brscan_uninstaller
+    if [ -f $1 ];then
+	brscan_uninstaller=uninstaller_$2
+	cat <<BRSCANUNINST   > $brscan_uninstaller
+#! /bin/bash
+
+touch /usr/local/Brother/sane/dummy
+$RMPKGCMD       $2
+rm -f /usr/local/Brother/sane/dummy
+rmdir --ignore-fail-on-non-empty /usr/local/Brother/sane 2>/dev/null
+
+$(rmscanlibmodules $3)
+BRSCANUNINST
+        chmod 744 $brscan_uninstaller
+    fi
+}
+
+make_brscan2_uninstaller(){
+    DBG_MSG make_brscan2_uninstaller
+    if [ -f $1 ];then
+	brscan2_uninstaller=uninstaller_$2
+	cat <<BRSCAN2UNINST   > $brscan2_uninstaller
+#! /bin/bash
+
+touch /usr/local/Brother/sane/dummy
+$RMPKGCMD       $2
+rm -f /usr/local/Brother/sane/dummy
+rmdir --ignore-fail-on-non-empty /usr/local/Brother/sane 2>/dev/null
+
+$(rmscanlibmodules $3)
+BRSCAN2UNINST
+        chmod 744 $brscan2_uninstaller
+    fi
+}
+
+
+
+scanlibmodules1="\
+libbrcolm.so.1.0.1 \
+libbrscandec.so.1.0.0 \
+sane/libsane-brother.so.1.0.7 \
+sane/libsane-brother.so \
+sane/libsane-brother.so.1 \
+libbrscandec.so.1 \
+libbrcolm.so \
+libbrcolm.so.1 \
+libbrscandec.so"
+
+scanlibmodules2="\
+libbrscandec2.so.1.0.0 \
+sane/libsane-brother2.so.1.0.7 \
+sane/libsane-brother2.so.1 \
+sane/libsane-brother2.so \
+libbrcolm2.so.1.0.1 \
+libbrcolm2.so \
+libbrscandec2.so.1 \
+libbrscandec2.so \
+libbrcolm2.so.1"
+
+scanlibmodules3="\
+libbrscandec3.so.1.0.0 \
+sane/libsane-brother3.so.1.0.7 \
+sane/libsane-brother3.so.1 \
+sane/libsane-brother3.so \
+libbrscandec3.so \
+libbrscandec3.so.1"
+
+
+scanlibmodules4=""
+
+
+dellist=''
+cpscanlibmodules(){
+  for file in $1
+  do
+    lib64mod=/usr/lib64/$file
+    libmod=/usr/lib/$file
+
+    if [ -f $lib64mod ];then
+      if [ -d /usr/lib ];then
+        if [ ! -f $libmod ];then
+           cp $lib64mod  $libmod 2> /dev/null
+           if [ -f $libmod ];then
+             dellist2=$(echo $dellist $libmod)
+             dellist=$dellist2
+           fi
+        fi
+      fi
+    fi
+  done
+}
+
+
+rmscanlibmodules(){
+  for file in $dellist
+  do
+    for check in $*
+    do
+      chkresult=$(echo $file | grep $check\$ )
+      if [ "$chkresult" !=  '' ];then
+        echo rm  -f $file 
+      fi
+    done
+    
+  done
+}
+
+udevrulefile=""
+udev_installed=no
+udev_install(){
+libsanerule=$(ls /lib/udev/rules.d/*.rules /etc/udev/rules.d/*.rules | \
+    grep libsane | head --line=1)
+number=$(echo $libsanerule | \
+    sed s/"\/lib\/udev\/rules.d\/"//g |\
+    sed s/"\/etc\/udev\/rules.d\/"//g |\
+    head --bytes=2)
+chk=$(echo $number | grep "[0-9][0-9]")
+if [ "$chk" = '' ];then
+    libsanerule=$(ls /lib/udev/rules.d/*.rules /etc/udev/rules.d/*.rules | \
+	grep sane-backends | head --line=1)
+    number=$(echo $libsanerule | \
+	sed s/"\/lib\/udev\/rules.d\/"//g |\
+        sed s/"\/etc\/udev\/rules.d\/"//g |\
+        head --bytes=2)
+fi
+chk=$(echo $number | grep "[0-9][0-9]")
+if [ "$chk" != '' ];then
+  chk=$(grep "ENV{libsane_matched}=\"yes\""  $libsanerule | tail -1)
+  if [ "$chk" != '' ];then
+
+####
+    udevrulefile="/etc/udev/rules.d/${number}-brother-libsane-type1-inst.rules"
+    cat <<  %%_UDEV_RULE_%% > $udevrulefile
+#
+#   udev rules sample for Brother MFP
+#         version 1.0.2-0
+#
+#   Copyright (C) 2012-2017 Brother. Industries, Ltd.
+#
+#   copy to /etc/udev/rules.d or /lib/udev/rules.d
+#
+
+ACTION!="add", GOTO="brother_mfp_end"
+SUBSYSTEM=="usb", GOTO="brother_mfp_udev_1"
+SUBSYSTEM!="usb_device", GOTO="brother_mfp_end"
+LABEL="brother_mfp_udev_1"
+SYSFS{idVendor}=="04f9", GOTO="brother_mfp_udev_2"
+ATTRS{idVendor}=="04f9", GOTO="brother_mfp_udev_2"
+GOTO="brother_mfp_end"
+LABEL="brother_mfp_udev_2"
+ATTRS{bInterfaceClass}!="0ff", GOTO="brother_mfp_end"
+ATTRS{bInterfaceSubClass}!="0ff", GOTO="brother_mfp_end"
+ATTRS{bInterfaceProtocol}!="0ff", GOTO="brother_mfp_end"
+#MODE="0666"
+#GROUP="scanner"
+ENV{libsane_matched}="yes"
+#SYMLINK+="scanner-%k"
+LABEL="brother_mfp_end"
+%%_UDEV_RULE_%%
+####
+   chmod 644    $udevrulefile
+   udev_installed=yes
+  fi
+fi
+}
+
+
+
+scanner_install(){
+  DBG_MSG scanner_install
+
+  case "$SCANNER_DRV"  in
+    "brscan")
+      drv_get_and_install $SCANFILE gpl_and_br_license  Force
+      if [ $iinstall_result = Yes ];then
+        cpscanlibmodules "$scanlibmodules1"
+        make_brscan_uninstaller  $SCANFILE  "$SCANNER_DRV" "$scanlibmodules1"
+        install_done=yes
+      fi
+      scanconfig=brsaneconfig
+      drv_get_and_install $SKEYFILE brother_license  Force
+      if [ $iinstall_result = Yes ];then
+          dellist=''
+          make_generic_uninstaller $SKEYFILE  brscan-skey
+          install_done=yes
+      fi
+      ;;
+    "brscan2")
+      drv_get_and_install $SCANFILE gpl_and_br_license  Force
+      if [ $iinstall_result = Yes ];then
+        cpscanlibmodules "$scanlibmodules2"
+        make_brscan2_uninstaller $SCANFILE  "$SCANNER_DRV" "$scanlibmodules2"
+        install_done=yes
+      fi
+      scanconfig=brsaneconfig2
+      drv_get_and_install $SKEYFILE brother_license  Force
+      if [ $iinstall_result = Yes ];then
+          dellist=''
+          make_generic_uninstaller $SKEYFILE  brscan-skey
+          install_done=yes
+      fi
+      ;;
+    "brscan3")
+      drv_get_and_install $SCANFILE gpl_and_br_license  Force
+      if [ $iinstall_result = Yes ];then
+        cpscanlibmodules "$scanlibmodules3"
+        make_generic_uninstaller $SCANFILE  "$SCANNER_DRV" "$scanlibmodules3"
+        install_done=yes
+      fi
+      scanconfig=brsaneconfig3
+      drv_get_and_install $SKEYFILE brother_license  Force
+      if [ $iinstall_result = Yes ];then
+          dellist=''
+          make_generic_uninstaller $SKEYFILE  brscan-skey
+          install_done=yes
+      fi
+      ;;
+    "brscan4")
+      drv_get_and_install $SCANFILE brother_license  Force
+      if [ $iinstall_result = Yes ];then
+        cpscanlibmodules "$scanlibmodules4"
+        make_generic_uninstaller $SCANFILE  "$SCANNER_DRV" "$scanlibmodules4"
+        install_done=yes
+      fi
+      scanconfig=brsaneconfig4
+      drv_get_and_install $SKEYFILE brother_license  Force
+      if [ $iinstall_result = Yes ];then
+          dellist=''
+          make_generic_uninstaller $SKEYFILE  brscan-skey
+          install_done=yes
+      fi
+      ;;
+    "brscan5")
+      drv_get_and_install $SCANFILE brother_license  Force
+      if [ $iinstall_result = Yes ];then
+        cpscanlibmodules "$scanlibmodules5"
+        make_generic_uninstaller $SCANFILE  "$SCANNER_DRV" "$scanlibmodules5"
+        install_done=yes
+      fi
+      scanconfig=brsaneconfig5
+      drv_get_and_install $SKEYFILE brother_license  Force
+      if [ $iinstall_result = Yes ];then
+          dellist=''
+          make_generic_uninstaller $SKEYFILE  brscan-skey
+          install_done=yes
+      fi
+      ;;
+
+    * )
+      ;;
+  esac
+
+  udev_install
+
+  if [ $udev_installed = yes ];then
+      echo   rm $udevrulefile  >> uninstaller_${SCANNER_DRV}
+  fi
+
+  # install libusb-0.1-4 if not available
+
+  libusbchk=$(ls -R /lib /usr/lib /usr/sbin | grep 'libusb-0.1.so.4')
+
+  if [ "$libusbchk" = '' ];then
+      if [ "$(which apt-get 2>/dev/null)" != '' ];then
+	  echo apt-get install libusb-0.1-4
+	  apt-get install libusb-0.1-4
+      fi
+  fi
+
+  # libusb-0.1-4
+
+  post_proc
+
+  if [ "$scanconfig" != '' ] && \
+     [ "$PRODUCT_NAME" != '' ] && \
+     [ -f "$(which $scanconfig)" ];then
+    if [ "$(echo $deviceuri | grep 'usb://')" = '' ];then
+      if [ "$(echo $deviceuri | grep 'file://')" = '' ];then
+       if [ "$ipadrs" = '' ];then
+         echo -e -n $COLOR$MESSAGE220          #"  enter IP address ->"
+         read ipadrs
+         echo -e $MONO
+       fi
+      fi
+      echo -n -e $COLOR4
+      echo $scanconfig -a name=$PRODUCT_NAME model=$PRODUCT_NAME ip=$ipadrs
+      echo -n -e $MONO
+      $scanconfig -a name=$PRODUCT_NAME model=$PRODUCT_NAME ip=$ipadrs
+    fi
+  fi
+
+}
+
+pre_proc(){
+  if [ "$preproc_done" = '' ];then
+    if [ "$PREPROC" != '' ];then
+       echo "$PREPROC"   | /bin/bash
+    fi
+  fi
+  preproc_done=done
+}
+
+post_proc(){
+  if [ "$install_done" = yes ];then
+    if [ "$postproc_done" = '' ];then
+      if [ "$POSTPROC" != '' ];then
+         echo "$POSTPROC"   | /bin/bash
+      fi
+    fi
+    postproc_done=done
+  fi
+}
+
+cleanup_deb_cups_pkg(){
+ if [ "$PKG" = deb ];then
+  if [ "$(which awk 2> /dev/null)" != '' ];then
+    installedpkgs=$($LSPKGCMD | grep -i cups | grep -i brother | \
+                                awk '{print $2}')
+    for pkg in $installedpkgs
+    do
+      pkg2=$(echo $pkg | sed s/":.*$"//g)
+      if [ "$(echo $CUPSFILE | grep $pkg2 )" != '' ];then
+        $RMPKGCMD $pkg
+        break             
+      fi
+    done
+  fi
+ fi
+}
+
+
+ipadrs=''
+deviceuri="usb://"
+PRODUCT_NAME=''
+
+#
+#  START  (MAIN)
+#
+
+HIDE_INF=YES
+
+if [ "$(echo $0 | grep  linux-brjprinter-installer)" = '' ];then
+  REGION=US
+else
+  REGION=JPN
+fi
+
+
+DBG_MSG MAIN
+dlresult=IDENTIC
+lnk_flag='    '
+
+if [ "$1" = '-h' ] || [ "$1" = '--help' ];then
+   echo -e $COLOR"$MESSAGE010"$0"$MESSAGE020"$MONO    #"USAGE:  $0  model"
+   echo -e $COLOR"$MESSAGE012"$0"$MESSAGE030"$MONO    #"USAGE:  $0  -f model"
+   echo -e $COLOR"$MESSAGE012"$0"$MESSAGE040"$MONO    #"USAGE:  $0  -l "
+   #DBG_MSG  "exit 2"
+   exit 0
+fi
+
+if [ $(whoami) != 'root' ];then
+    echo -e  $COLOR$MESSAGE050$MONO       #"Only root can do this operation."
+    #DBG_MSG  "exit 5"
+    exit 0
+fi
+
+if [ ! -f /etc/init.d/cups ] && [ ! -f /etc/init.d/cupsys ];then 
+ if [ "$(which lpadmin 2> /dev/null)" = '' ];then
+  echo -e $COLOR$MESSAGE060$MONO                  #"CUPS is not installed."
+  if [ "$1" = '' ];then
+    echo -e -n $COLOR$MESSAGE240$MONO    #"Hit Return/Enter Key"
+    read answer
+  fi
+  #DBG_MSG  "exit 6"
+  exit 0
+ fi
+fi
+
+LIB64FLT=/usr/lib64/cups/filter
+LIB32FLT=/usr/lib32/cups/filter
+LIBFLT=/usr/lib/cups/filter
+
+
+TESTPRINT=/usr/share/cups/data/testprint.ps
+TESTPRINT2=/usr/share/cups/data/testprint
+
+
+## sweep
+pre_install_sweep
+
+
+
+package_list=NO
+CACHEFLG='--no-cache'
+
+
+infcheck=0
+if  [ "$1" = '--inf-check=1' ];then
+   infcheck=1
+   package_list=TEXT
+fi
+if  [ "$1" = '--inf-check=2' ];then
+   infcheck=2
+   package_list=CSV
+fi
+if  [ "$1" = '--inf-check=3' ];then
+   infcheck=3
+   package_list=CSV
+fi
+if  [ "$1" = '--inf-check=4' ];then
+   infcheck=4
+   package_list=CSV
+fi
+if  [ "$1" = '--inf-check=5' ];then
+   infcheck=5
+   package_list=CSV
+fi
+
+
+
+if [ package_list = TEXT ];then
+  echo -e -n $MONO
+fi
+
+
+if [ "$(which wget 2> /dev/null)" = '' ];then
+  if   [ "$(which yum 2>/dev/null)" != '' ];then
+     echo yum install wget
+     yum install wget
+  elif [ "$(which dnf 2>/dev/null)" != '' ];then
+     echo dnf install wget
+     dnf install wget
+  elif [ "$(which apt-get 2>/dev/null)" != '' ];then
+     echo apt-get install wget
+     apt-get install wget
+  fi
+fi
+
+
+if [ "$(which wget 2> /dev/null)" = '' ];then
+  echo -e -n $COLOR$MESSAGE280             #"wget is required."
+  echo -e $MONO
+  #DBG_MSG  "exit 7"
+  exit 0
+fi
+
+post_install_sweep 
+
+
+
+
+
+if [ "$(which dpkg 2> /dev/null)" != '' ];then
+   PKG=deb
+elif [ "$(which rpm 2> /dev/null)" != '' ];then
+   PKG=rpm
+else
+   echo -e $COLOR$MESSAGE122$MONO     #"Rpm or dpkg is required."
+   post_install_sweep 
+   if [ "$1" = '' ];then
+     echo -e -n $COLOR$MESSAGE240$MONO    #"Hit Return/Enter Key"
+     read answer
+   fi
+   #DBG_MSG  "exit 9"
+   exit 0
+fi
+
+
+if [ "$PKG" = deb ];then
+ if [ "$(which awk 2> /dev/null)" = '' ];then
+  if [ "$(which apt-get 2>/dev/null)" != '' ];then
+     echo apt-get install mawk
+     apt-get install mawk
+  fi
+ fi
+fi
+
+
+
+if [ "$BROTHER_INSRALLER_FAKE_PKG" != '' ];then
+   PKG=$BROTHER_INSRALLER_FAKE_PKG
+fi
+
+if [ "$PKG" = deb ];then
+  PKGCMD='dpkg  -i --force-all'
+  RMPKGCMD='dpkg  -P'
+  LSPKGCMD='dpkg  --list'
+  EXT='\.deb'
+  PKG=deb
+elif [ "$PKG" = rpm ];then
+  PKGCMD='rpm  -ihv  --nodeps  --replacefiles --replacepkgs'
+  RMPKGCMD='rpm -e'
+  LSPKGCMD='rpm -qa'
+  EXT='\.rpm'
+  PKG=rpm
+fi
+
+if [ "$1" = '-f' ]             || \
+   [ "$1" = '--find' ]         || \
+   [ "$1" = '--inf-check=1' ] || \
+   [ "$1" = '--inf-check=2' ] || \
+   [ "$1" = '--inf-check=3' ] || \
+   [ "$1" = '--inf-check=4' ] || \
+   [ "$1" = '--inf-check=5' ] || \
+   [ "$1" = '--inf-check=6' ] || \
+   [ "$1" = '-p' ];then
+ MODEL_tmp=$(echo $2 | sed s/'-'//g)
+elif [ "$1" = '' ];then
+ echo -e -n $COLOR$MESSAGE121       #"Input model name->"
+ read modelinput
+ echo -e $MONO
+ MODEL_tmp=$(echo $modelinput | sed s/'-'//g)
+else
+ MODEL_tmp=$(echo $1 | sed s/'-'//g)
+fi
+
+if [ "$(echo $MODEL_tmp | grep '@')" = '' ];then
+  MODEL=$MODEL_tmp
+  DEBUG_NOINSTALL='no'
+else
+  MODEL=$(echo $MODEL_tmp | tr -d '@')
+  DEBUG_NOINSTALL='yes'
+fi
+
+if [ "$(echo $MODEL_tmp | grep '\[')" = '' ];then
+  MODEL=$MODEL_tmp
+  NODOWNLOAD=0
+else
+  INFPATH="$(echo $MODEL_tmp | tr -d '[' | tr -d ']' )"
+  if [ ! -f $INFPATH ];then
+    echo -e $COLOR$MESSAGE130$MONO
+    exit 0
+  fi
+  MODEL=$(echo $MODEL_tmp | tr -d '[' | tr -d ']' | sed -e s/"^.*\/"//g)
+
+  NODOWNLOAD=1
+fi
+
+
+
+LPRFILE=""
+CUPSFILE=""
+PDRVFILE=""
+SCANFILE=""
+SKEYFILE=""
+
+
+wkdir=/tmp/brprinter-installer
+packdir=brother_driver_packdir
+basedir=$(pwd)
+
+modelnhuc=""
+mkdir -p $wkdir 
+
+REGION2=$REGION
+
+
+if [ -s "$(echo $1 | grep -e .${PKG})"   ]      && \
+   [ -s "$(echo $2 | grep -e .${PKG})"   ]      && \
+   [ -s "$(echo $1 | grep -e 'lp' -e 'cups')"   ] && \
+   [ -s "$(echo $2 | grep -e 'lp' -e 'cups')"   ] && \
+   [ -f $1 ] && \
+   [ -f $2 ] ; then
+
+   #install local files
+
+   tmpcup=$(echo $1 | grep cups)
+   tmplpr=$(echo $2 | grep lp)
+   if [ "$tmpcup" = '' ] || [ "$tmplpr" = '' ];then
+      tmpcup=$(echo $2 | grep cups)
+      tmplpr=$(echo $1 | grep lp)
+   fi
+
+   if [ "$tmpcup" = '' ] || [ "$tmplpr" =  '' ];then
+      echo -e $COLOR$MESSAGE130$MONO     #"Install packages does not be found."
+      exit 0
+   fi
+
+   echo [UNKNOWN]            >  $wkdir/LOCAL
+   echo PRN_CUP_RPM=$tmpcup  >> $wkdir/LOCAL
+   echo PRN_CUP_DEB=$tmpcup  >> $wkdir/LOCAL
+   echo PRN_LPD_RPM=$tmplpr  >> $wkdir/LOCAL
+   echo PRN_LPD_DEB=$tmplpr  >> $wkdir/LOCAL
+   echo PRN_DRV_RPM=$tmplpr  >> $wkdir/LOCAL
+   echo PRN_DRV_DEB=$tmplpr  >> $wkdir/LOCAL
+   echo PRINTERNAME=UNKNOWN  >> $wkdir/LOCAL
+   echo SCANNER_DRV=         >> $wkdir/LOCAL
+   echo SCANKEY_DRV=         >> $wkdir/LOCAL
+
+   MODEL=LOCAL
+   NODOWNLOAD=2
+
+fi
+
+# network check
+
+netaccess=FALSE
+network_check  HL5470DW
+if [ $netaccess != SUCCESS ];then
+   network_check  MFCJ6710CDW
+fi
+
+if [ $netaccess != SUCCESS ];then
+
+    echo -e -n $COLOR$MESSAGE070  #"Will you specify the PROXY server\? [y/N] ->"
+    read answer
+    if [ "$answer" = Y ] || [ "$answer" = y ]; then
+
+      #"enter PROXY server URL "
+      #"   ex http://\(proxy-server-url\):\(port\)"
+      #"   ex http://\(login-name\):\(pass-word\)@\(proxy-server-url\):\(port\)"
+      #"     ->"
+
+      echo -e $COLOR$MESSAGE080
+      echo -e $COLOR$MESSAGE090
+      echo -e $COLOR$MESSAGE100
+      echo -e -n $COLOR$MESSAGE110
+      read proxy
+      echo -e $MONO
+      export http_proxy=$proxy
+      network_check  HL5470DW
+      if [ $netaccess != SUCCESS ];then
+         network_check  MFCJ6710CDW
+      fi
+      if [ $netaccess != SUCCESS ];then
+        echo -e $COLOR$MESSAGE120$MONO    
+        exit 0
+      fi
+    else
+      echo -e $COLOR$MESSAGE120$MONO    
+      exit 0
+    fi
+fi
+
+
+
+
+set_host_info $REGION
+get_inf_file  $MODEL  $wkdir
+
+if [ $REGION = JPN ];then
+  if [ ! -f ${wkdir}/${modelnhuc} ] || [ "${modelnhuc}" = '' ];then
+    REGION=US
+    modelnhuc=''
+    set_host_info $REGION
+    get_inf_file  $MODEL  $wkdir
+    REGION=JPN
+  fi
+fi
+
+if [ $infcheck = 0 ];then
+  if [ ! -f ${wkdir}/${modelnhuc} ] || [ "${modelnhuc}" = '' ];then
+    netaccess=FALSE
+    network_check  HL5470DW
+    if [ $netaccess != SUCCESS ];then
+       network_check  MFCJ6710CDW
+    fi
+
+    if [ $netaccess = SUCCESS ];then
+      echo -e $COLOR$MESSAGE130$MONO     #"Install packages does not be found."
+      echo -e $COLOR$MESSAGE140$MONO     #" Confirm the model name."
+      echo -e $MONO
+      exit 0
+    fi
+    echo -e -n $COLOR$MESSAGE070  #"Will you specify the PROXY server\? [y/N] ->"
+    read answer
+    if [ "$answer" = Y ] || [ "$answer" = y ]; then
+
+      #"enter PROXY server URL "
+      #"   ex http://\(proxy-server-url\):\(port\)"
+      #"   ex http://\(login-name\):\(pass-word\)@\(proxy-server-url\):\(port\)"
+      #"     ->"
+
+      echo -e $COLOR$MESSAGE080
+      echo -e $COLOR$MESSAGE090
+      echo -e $COLOR$MESSAGE100
+      echo -e -n $COLOR$MESSAGE110
+      read proxy
+      echo -e $MONO
+      export http_proxy=$proxy
+    else
+      echo -e $MONO
+      #DBG_MSG  "exit 10"
+      exit 0
+    fi
+    echo -e $MONO
+    REGION=$REGION2
+
+    set_host_info $REGION
+    get_inf_file  $MODEL  $wkdir
+
+    if [ $REGION = JPN ];then
+      if [ ! -f ${wkdir}/${modelnhuc} ] || [ "${modelnhuc}" = '' ];then
+        REGION=US
+        modelnhuc=''
+        set_host_info $REGION
+        get_inf_file  $MODEL  $wkdir
+      fi
+      REGION=JPN
+    fi
+  fi
+fi
+
+if [ ! -f ${wkdir}/${modelnhuc} ] || [ "${modelnhuc}" = '' ];then
+  #"Cannot get server information. Confirm the network."
+  if [ $infcheck = 0 ];then
+    echo -e $COLOR$MESSAGE120$MONO    
+    exit 0
+  fi
+  if [ $package_list = TEXT ];then
+    echo "PACKAGE:PRNL="$LPRFILE
+    echo "PACKAGE:PRNC="$CUPSFILE
+    echo "PACKAGE:PDRV="$PDRVFILE
+    echo "PACKAGE:SCAN="$SCANFILE
+    echo "PACKAGE:SKEY="$SKEYFILE
+    exit 0
+  fi
+  if [ $package_list = CSV ];then
+    echo "$2"":,"$PKG",${dlresult},${lnk_flag}"\
+         ,$LPRFILE,$CUPSFILE,$PDRVFILE,$SCANFILE,$SKEYFILE
+    exit 0
+  fi
+
+  touch brother-drivers/"$0".log
+  dlresult="FALSE  "
+  lnk_flag="       "
+  rccups="       "
+  rclpr="       "
+  rcscan="       "
+  rcskey="       "
+
+  if [ "$infcheck" = 3 ];then
+     echo "$2"":,"$PKG",${dlresult},${lnk_flag}","$SCANNER_DRV"\
+         ,$rccups,$rclpr,$rcscan,$rcskey\
+ 	  >>  brother-drivers/"$0".log
+     rm -fR brother-drivers/$2   2> /dev/null
+  fi
+
+  if [ "$infcheck" = 4 ] || [ "$infcheck" = 5 ];then
+
+     echo "$2"":,"$PKG",${dlresult},${lnk_flag}","$SCANNER_DRV"\
+         ,$rccups,$rclpr,$rcscan,$rcskey\
+         ,$LPRFILE,$CUPSFILE,$PDRVFILE,$SCANFILE,$SKEYFILE \
+  	  >>  brother-drivers/"$0".log
+  fi
+
+
+  exit 0
+fi
+
+arch=$(uname -m | grep "amd64")
+if [ "$arch" = '' ];then
+  arch=$(uname -m | grep "x86_64")
+fi
+if [ "$arch" = '' ];then
+  arch=i386
+fi
+
+if [ "$BROTHER_INSRALLER_FAKE_ARC" != '' ];then
+  arch=$BROTHER_INSRALLER_FAKE_ARC
+fi
+
+get_packages_name ${modelnhuc}
+
+if [ -f ${wkdir}/${modelnhuc} ];then
+   rm -f ${wkdir}/${modelnhuc}   2> /dev/null
+fi
+
+if [ $infcheck = 1 ];then
+  echo "PACKAGE:PRNL="$LPRFILE
+  echo "PACKAGE:PRNC="$CUPSFILE
+  echo "PACKAGE:PDRV="$PDRVFILE
+  echo "PACKAGE:SCAN="$SCANFILE
+  echo "PACKAGE:SKEY="$SKEYFILE
+  exit 0
+fi
+if [ $infcheck = 2 ];then
+  echo "$2"":,"$PKG",${dlresult},${lnk_flag}"\
+         ,$LPRFILE,$CUPSFILE,$PDRVFILE,$SCANFILE,$SKEYFILE
+  exit 0
+fi
+
+
+
+if [ "$infcheck" -ge 3 ];then
+  rccups='N/A    '
+  rclpr='N/A    '
+  rcscan='N/A    '
+  rcskey='N/A    '
+
+  dwkdir=brother-drivers/$2
+  mkdir -p $dwkdir
+  if [ "$CUPSFILE" != '' ];then
+    rccups="FALSE  "
+    wget $WGET_OP '-nc' $URL_PKG/$CUPSFILE   -P $dwkdir
+  fi
+  if [ "$LPRFILE" != '' ];then
+    rclpr="FALSE  "
+    wget $WGET_OP '-nc' $URL_PKG/$LPRFILE    -P $dwkdir
+  fi
+  if [ "$PDRVFILE" != '' ];then
+    rcpdrv="FALSE  "
+    wget $WGET_OP '-nc' $URL_PKG/$PDRVFILE    -P $dwkdir
+  fi
+  if [ "$SCANFILE" != '' ];then
+    rcscan="FALSE  "
+    wget $WGET_OP '-nc' $URL_PKG/$SCANFILE   -P $dwkdir
+  fi
+  if [ "$SKEYFILE" != '' ];then
+    rcskey="FALSE  "
+    wget $WGET_OP '-nc' $URL_PKG/$SKEYFILE   -P $dwkdir
+  fi
+ 
+  # -------------
+  if [ "$CUPSFILE" != '' ];then
+    if [ -f $dwkdir/$CUPSFILE ];then
+      rccups=SUCCESS
+    fi
+  fi
+  if [ "$LPRFILE" != '' ];then
+    if [ -f $dwkdir/$LPRFILE ];then
+      rclpr=SUCCESS
+    fi
+  fi
+  if [ "$PDRVFILE" != '' ];then
+    if [ -f $dwkdir/$PDRVFILE ];then
+      rcpdrv=SUCCESS
+    fi
+  fi
+  if [ "$SCANFILE" != '' ];then
+    if [ -f $dwkdir/$SCANFILE ];then
+      rcscan=SUCCESS
+    fi
+  fi
+  if [ "$SKEYFILE" != '' ];then
+    if [ -f $dwkdir/$SKEYFILE ];then
+      rcskey=SUCCESS
+    fi
+  fi
+
+  # -------------
+
+  touch brother-drivers/"$0".log
+
+  if [ "$infcheck" = 3 ];then
+     echo "$2"":,${modelnhuc},"$PKG",${dlresult},${lnk_flag}","$SCANNER_DRV"\
+         ,$rccups,$rclpr,$rcscan,$rcskey\
+ 	  >>  brother-drivers/"$0".log
+  fi
+
+  if [ "$infcheck" = 4 ] || [ "$infcheck" = 5 ];then
+
+     echo "$2"":,${modelnhuc},"$PKG",${dlresult},${lnk_flag}","$SCANNER_DRV"\
+         ,$rccups,$rclpr,$rcscan,$rcskey\
+         ,$LPRFILE,$CUPSFILE,$PDRVFILE,$SCANFILE,$SKEYFILE \
+  	  >>  brother-drivers/"$0".log
+  fi
+
+  if [ "$infcheck" = 3 ] || [ "$infcheck" = 4 ];then
+     rm -fR brother-drivers/$2   2> /dev/null
+  fi
+  exit 0
+fi
+
+
+if [ "$CUPSFILE" = '' ] && [ "$LPRFILE" = '' ] && [ "$PDRVFILE" = '' ] && [ "$SCAN" = '' ];then
+  echo -e $COLOR$MESSAGE130$MONO     #"Install packages does not be found."
+  echo -e $COLOR$MESSAGE140$MONO     #" Confirm the model name."
+
+  post_install_sweep 
+
+  if [ "$1" = '' ];then
+    echo -e -n $COLOR$MESSAGE240$MONO    #"Hit Return/Enter Key"
+    read answer
+  fi
+  #DBG_MSG  "exit 12"
+  exit 0
+fi
+
+
+if [ "$1" = '-f' ] || [ "$1" = '--find' ];then
+  echo $LPRFILE
+  echo $CUPSFILE
+  echo $PDRVFILE
+  echo $SCANFILE
+  echo $SKEYFILE
+
+  post_install_sweep 
+  #DBG_MSG  "exit 13"
+  exit 0
+fi
+
+
+
+
+PREPKGCMDC=''
+PREPKGCMDL=''
+PREPKGCMDP=''
+if [ "$PKG" = deb ];then
+  if [ "$CUPSFILE" != '' ];then
+    PREPKGCMDC="dpkg  -x $CUPSFILE /"
+  fi
+  if [ "$PDRVFILE" != '' ];then
+    PREPKGCMDP="dpkg  -x $PDRVFILE /"
+  fi
+  if [ "$LPRFILE" != '' ];then
+    PREPKGCMDL="dpkg  -x $LPRFILE /"
+  fi
+fi
+
+post_install_sweep 
+
+
+echo -e $COLOR4$MESSAGE150$MONO      #"You are going to install  following packages."
+
+if [ "$LPRFILE" != '' ];then
+  echo -e $COLOR4"   "$LPRFILE$MONO
+fi
+if [ "$CUPSFILE" != '' ];then
+  echo -e $COLOR4"   "$CUPSFILE$MONO
+fi
+if [ "$PDRVFILE" != '' ];then
+  echo -e $COLOR4"   "$PDRVFILE$MONO
+fi
+
+if [ "$SCANFILE" != '' ];then
+  echo -e $COLOR4"   "$SCANFILE
+fi
+if [ "$SKEYFILE" != '' ];then
+  echo -e $COLOR4"   "$SKEYFILE
+fi
+
+
+
+echo -e -n $COLOR$MESSAGE160        #"OK\? [y/N]  ->"
+
+read answer
+echo -e $MONO
+
+if [ "$answer" != Y ] && [ "$answer" != y ]; then
+    #scanner_install          #    scanner
+    #DBG_MSG  "exit 14"
+    exit 0
+fi
+
+if [ "$LPRFILE" != '' ];then
+  if ! [ -f "$LPRFILE" ];then
+    brother_license
+
+    echo -e -n $COLOR$MESSAGE170        #"Are you agree\? [Y/n] ->"
+
+    read answer
+    echo -e $MONO
+
+    if [ "$answer" = N ] || [ "$answer" = n ]; then
+      scanner_install          #    scanner
+      post_proc
+      #DBG_MSG  "exit 15"
+      exit 0
+    fi
+
+
+    if [ "$(which wget 2> /dev/null)" = '' ];then
+      echo -e -n $COLOR$MESSAGE280             #"wget is required."
+      echo -e $MONO
+      #DBG_MSG  "exit 16"
+      exit 0
+    fi
+    if [ ! -f $LPRFILE ];then
+      rm -f $LPRFILE   2> /dev/null
+      echo wget $WGET_OP $CACHEFLG $URL_PKG/$LPRFILE
+      wget $WGET_OP $CACHEFLG $URL_PKG/$LPRFILE
+    fi
+  fi 
+fi
+
+if [ "$CUPSFILE" != '' ];then
+  if ! [ -f "$CUPSFILE" ];then
+
+    gpl_license
+
+    echo -e -n $COLOR$MESSAGE180          #"Do you agree\? [Y/n] ->"
+    read answer
+    echo -e $MONO
+
+    if [ "$answer" = N ] || [ "$answer" = n ]; then
+      scanner_install          #    scanner
+      post_proc
+      #DBG_MSG  "exit 17"
+      exit 0
+    fi
+    if [ "$(which wget 2> /dev/null)" = '' ];then
+      echo -e -n $COLOR$MESSAGE280             #"wget is required."
+      echo -e $MONO
+      #DBG_MSG  "exit 18"
+      exit 0
+    fi
+
+    if [ ! -f $CUPSFILE ];then
+      rm -f $CUPSFILE   2> /dev/null
+      echo wget $WGET_OP $CACHEFLG $URL_PKG/$CUPSFILE
+      wget $WGET_OP $CACHEFLG $URL_PKG/$CUPSFILE
+    fi
+
+  fi
+fi
+
+#--
+if [ "$PDRVFILE" != '' ];then
+  if ! [ -f "$PDRVFILE" ];then
+
+    pdrv_complex_license
+
+    echo -e -n $COLOR$MESSAGE180          #"Do you agree\? [Y/n] ->"
+    read answer
+    echo -e $MONO
+
+    if [ "$answer" = N ] || [ "$answer" = n ]; then
+      scanner_install          #    scanner
+      post_proc
+      #DBG_MSG  "exit 17"
+      exit 0
+    fi
+    if [ "$(which wget 2> /dev/null)" = '' ];then
+      echo -e -n $COLOR$MESSAGE280             #"wget is required."
+      echo -e $MONO
+      #DBG_MSG  "exit 18"
+      exit 0
+    fi
+
+    if [ ! -f $PDRVFILE ];then
+      rm -f $PDRVFILE   2> /dev/null
+      echo wget $WGET_OP $CACHEFLG $URL_PKG/$PDRVFILE
+      wget $WGET_OP $CACHEFLG $URL_PKG/$PDRVFILE
+    fi
+
+  fi
+fi
+
+
+
+
+pre_proc
+
+require_386lib=no
+if [ "$arch" != 'i386' ];then
+  require_386lib=yes
+  if [ "$REQ32LIB" = 'NO' ] || \
+     [ "$REQ32LIB" = 'No' ] || \
+     [ "$REQ32LIB" = 'no' ];then
+     require_386lib=no
+  fi
+fi 
+
+if [ "$require_386lib" = yes ];then
+  if [ "$(which dpkg 2>/dev/null)" != '' ];then
+    ia32=$(dpkg -l | grep "ia32-libs")
+    lib32=$(dpkg -l | grep "lib32stdc++6")
+
+    if [ "$ia32" = '' ] || [ "$lib32" = '' ];then
+       apt-get update
+    fi
+
+    if [ "$ia32" = '' ];then
+       apt-get install ia32-libs
+    fi
+    lib32=$(dpkg -l | grep "lib32stdc++6")
+    if [ "$lib32" = '' ];then
+       apt-get install lib32stdc++6
+    fi
+  fi
+  #----------- check Fedor,CentOS,RedHat 64 --------------
+  if [ -e /etc/fedora-release ] || [ -e /etc/fedora ] || \
+     [ -e /etc/centos-release ] || [ -e /etc/centos ] || \
+     [ -e /etc/redhat-release ] || [ -e /etc/redhat ]; then
+    lib32=$(rpm -qa| grep glibc | grep i686)
+    if [ "$lib32" = "" ];then
+      if   [ "$(which yum 2>/dev/null)" != '' ];then
+        echo yum install  glibc.i686
+        yum install  glibc.i686
+        echo yum install  libstdc++.i686
+        yum install  libstdc++.i686
+      else
+        echo dnf install  glibc.i686
+        dnf install  glibc.i686
+        echo dnf install  libstdc++.i686
+        dnf install  libstdc++.i686
+      fi
+    fi
+  fi
+fi
+
+
+DUMMYCUPSYS=0
+DUMMYCUPS=0
+DUMMYLPD=0
+DUMMYLPRNG=0
+if ! [ -f /etc/init.d/cupsys ];then
+ DUMMYCUPSYS=1
+ ln -s /bin/true  /etc/init.d/cupsys
+fi
+
+if ! [ -f /etc/init.d/cups ];then
+ DUMMYCUPS=1
+ ln -s /bin/true  /etc/init.d/cups
+fi
+
+if ! [ -f /etc/init.d/lpd ];then
+ DUMMYLPD=1
+ ln -s /bin/true  /etc/init.d/lpd
+fi
+
+if ! [ -f /etc/init.d/lprng ];then
+ DUMMYLPRNG=1
+ ln -s /bin/true  /etc/init.d/lprng
+fi
+
+LPADMIN=lpadmin
+LPINFO=lpinfo
+
+if ! [ "$(which $LPADMIN 2> /dev/null)" ];then
+   LPADMIN=/usr/sbin/lpadmin
+fi
+
+if ! [ "$(which $LPINFO 2> /dev/null)" ];then
+  LPINFO=/usr/sbin/lpinfo
+fi
+
+
+mkmodeldir=0
+if [ ! -d /usr/share/cups/model ];then
+  mkdir -p /usr/share/cups/model
+  mkmodeldir=1
+fi
+
+
+if [ "$PREPKGCMDL" != '' ];then
+  echo  $PREPKGCMDL
+  $PREPKGCMDL
+fi
+if [ "$PREPKGCMDC" != '' ];then
+  echo  $PREPKGCMDC
+  $PREPKGCMDC  
+fi
+if [ "$PREPKGCMDP" != '' ];then
+  echo  $PREPKGCMDP
+  $PREPKGCMDP
+fi
+
+
+if [ "$PKG" = deb ];then
+  cleanup_deb_cups_pkg
+
+  # for Ubuntu 11.04
+  debfile=$(echo $LPRFILE | sed s/\.i386.deb/a\.i386.deb/g)
+  mkdir -p $wkdir/$packdir
+
+  if [ "$LPRFILE" != '' ];then
+
+    cp $basedir/$LPRFILE $wkdir/$packdir
+    cd $wkdir/$packdir
+
+    dpkg-deb -e $LPRFILE  DEBIAN
+    dpkg -x $LPRFILE  ./
+
+    cat DEBIAN/control \
+	   | sed s/Depends.*$//g \
+           | tr -s '\n' \
+	   > DEBIAN/control.tmp
+
+    mv -f DEBIAN/control.tmp DEBIAN/control
+
+    rm -f $LPRFILE   2> /dev/null
+    rm -fR usr/share/doc/*   2> /dev/null
+    LPRFILE=$debfile
+
+    cd $wkdir
+    dpkg -b ./$packdir $debfile
+    echo dpkg -b ./$packdir $debfile
+
+    rm -fR $wkdir/$packdir/*    2> /dev/null
+  fi
+
+  if [ "$CUPSFILE" != '' ];then
+    debfile=$(echo $CUPSFILE | sed s/\.i386.deb/a\.i386.deb/g)
+  
+    cp $basedir/$CUPSFILE $wkdir/$packdir
+    cd $wkdir/$packdir
+
+    dpkg-deb -e $CUPSFILE  DEBIAN
+    dpkg -x $CUPSFILE  ./
+
+    cat DEBIAN/control \
+	   | sed s/Depends.*$//g \
+           | tr -s '\n' \
+	   > DEBIAN/control.tmp
+
+    mv -f DEBIAN/control.tmp DEBIAN/control
+
+    rm -f $CUPSFILE   2> /dev/null
+    rm -fR usr/share/doc/*   2> /dev/null
+    cd $wkdir
+
+    dpkg -b ./$packdir $debfile
+    echo dpkg -b ./$packdir $debfile
+    CUPSFILE=$debfile
+    rm -fR $wkdir/$packdir   2> /dev/null
+  fi
+
+  if [ "$PDRVFILE" != '' ];then
+    debfile=$(echo $PDRVFILE | sed s/\.i386.deb/a\.i386.deb/g)
+  
+    cp $basedir/$PDRVFILE $wkdir/$packdir
+    cd $wkdir/$packdir
+
+    dpkg-deb -e $PDRVFILE  DEBIAN
+    dpkg -x $PDRVFILE  ./
+
+    cat DEBIAN/control \
+	   | sed s/Depends.*$//g \
+           | tr -s '\n' \
+	   > DEBIAN/control.tmp
+
+    mv -f DEBIAN/control.tmp DEBIAN/control
+
+    rm -f $PDRVFILE   2> /dev/null
+    rm -fR usr/share/doc/*   2> /dev/null
+    cd $wkdir
+
+    dpkg -b ./$packdir $debfile
+    echo dpkg -b ./$packdir $debfile
+    PDRVFILE=$debfile
+    rm -fR $wkdir/$packdir   2> /dev/null
+  fi
+
+
+  if [ "$CUPSFILE" != '' ];then
+    mv $wkdir/$CUPSFILE   $basedir
+  fi
+  if [ "$LPRFILE" != '' ];then
+    mv $wkdir/$LPRFILE    $basedir
+  fi
+  if [ "$PDRVFILE" != '' ];then
+    mv $wkdir/$PDRVFILE   $basedir
+  fi
+fi
+
+cd $basedir
+
+if [ "$DEBUG_NOINSTALL" != 'yes' ];then
+  if [ "$LPRFILE" != '' ];then
+    echo -n -e $COLOR4
+    echo $PKGCMD  $LPRFILE
+    echo -n -e $MONO
+    $PKGCMD  $LPRFILE
+  fi
+
+  if [ "$CUPSFILE" != '' ];then
+    echo -n -e $COLOR4
+    echo $PKGCMD  $CUPSFILE 
+    echo -n -e $MONO
+    $PKGCMD  $CUPSFILE  |  tee /tmp/brother_linux_brprinter_installer.tmp
+    echo -n -e $MONO
+  fi
+
+  if [ "$PDRVFILE" != '' ];then
+    echo -n -e $COLOR4
+    echo $PKGCMD  $PDRVFILE 
+    echo -n -e $MONO
+    $PKGCMD  $PDRVFILE  |  tee /tmp/brother_linux_brprinter_installer.tmp
+    echo -n -e $MONO
+  fi
+else
+  echo -n -e $COLOR4
+  if [ "$LPRFILE" != '' ];then
+    echo $PKGCMD  $LPRFILE
+  fi
+  sleep 1
+  if [ "$CUPSFILE" != '' ];then
+    echo $PKGCMD  $CUPSFILE 
+  fi
+  sleep 1
+  if [ "$PDRVFILE" != '' ];then
+    echo $PKGCMD  $PDRVFILE 
+  fi
+
+  echo -n -e $MONO
+fi
+install_done=yes
+
+#if [ "$PKG" = deb ];then
+#  rm  -f $LPRFILE   2> /dev/null
+#  rm  -f $CUPSFILE   2> /dev/null
+#fi
+
+
+if [ -f /tmp/brother_linux_brprinter_installer.tmp ];then
+  csherr=$(cat /tmp/brother_linux_brprinter_installer.tmp | \
+        grep 'ERROR: csh is required') 
+
+  if [ "$csherr" != "" ];then
+    echo -e -n $COLOR
+    echo $MESSAGE250
+    echo -e $MONO
+    #DBG_MSG  "exit 19"
+    exit 0
+  fi
+fi
+
+
+#wait for installation end
+RAWINSTALLED=yes
+if [ "$PRINTERNAME" != UNKNOWN ];then
+  retry='0'
+  if [ "$DEBUG_NOINSTALL" != 'yes' ];then
+    while [ ! -f /etc/cups/ppd/"$PRINTERNAME".ppd ] && [ "$retry" -le $TIMEOUT ] ;do
+     sleep 1
+     retry=$(($retry+1))
+     echo  -n \# 
+    done
+    if [ -f /etc/cups/ppd/"$PRINTERNAME".ppd ];then
+       RAWINSTALLED=no
+    fi
+  else
+    sleep 1
+  fi
+else
+  retry='0'
+  if [ "$DEBUG_NOINSTALL" != 'yes' ];then
+    while [ $retry -le $TIMEOUT ] ;do
+      sleep 1 
+      for ppd in $(ls /etc/cups/ppd/*.ppd)
+      do
+        modelname=$(echo $ppd | sed s/\.ppd//g | sed s/"\/etc\/cups\/"//g)
+        modelname2=$(echo $modelname | tr -d '-' | tr "[A-Z]" "[a-z]")
+        
+        file=$(echo $CUPSFILE | tr -d '-' | tr "[A-Z]" "[a-z]")
+        if [ "$(echo $file | grep $modelname2)" != '' ];then
+           retry=512
+           PRINTERNAME=$(echo $modelname |  tr "[a-z]" "[A-Z]")
+           RAWINSTALLED=no
+           echo PRINTERNAME=$modelname
+           break
+        fi
+      done 
+      retry=$(($retry+1))
+      echo -n \#
+    done
+
+    if [ "$PRINTERNAME" = UNKNOWN ];then
+      
+      PRINTERNAME=$(echo $CUPSFILE         | \
+	sed s/"^br"//g      		   | \
+	sed s/"^cupswrapper"//g		   | \
+	sed s/"cupswrapper-.*$"//g	   | \
+	sed s/"cupswrapperinch-.*$"//g	   | \
+	sed s/"cups-.*$"//g	           | \
+	sed s/"-.*$"//g			   | \
+	sed s/"_.*$"//g			   | \
+	tr "[a-z]" "[A-Z]")
+    fi
+
+  else
+    sleep 1
+  fi
+fi
+
+PPDOPT=''
+if [ "$RAWINSTALLED" = 'yes' ];then
+  for ppd in $(ls /usr/share/ppd/*.ppd /usr/share/cups/model/*.ppd)
+  do
+    ppd2=$(echo $ppd | tr -d '-')
+    prnname=$(echo $PRINTERNAME | tr -d '-')
+    if [ "$(echo $ppd2 |  grep -i $prnname)" != '' ];then
+       PPDOPT="-P  $ppd"
+       break
+    fi
+  done
+fi
+
+
+echo \#
+
+#------------
+
+if [ "$DUMMYCUPS" = 1 ];then
+  if [ "$(ls -al /etc/init.d/cups 2> /dev/null | grep ^l )" != '' ];then
+    rm -f /etc/init.d/cups   2> /dev/null
+  fi
+fi
+
+if [ "$DUMMYCUPSYS" = 1 ];then
+  if [ "$(ls -al /etc/init.d/cupsys  2> /dev/null | grep ^l )" != '' ];then
+    rm -f /etc/init.d/cupsys   2> /dev/null
+  fi
+fi
+
+if [ "$DUMMYLPD" = 1 ];then
+  if [ "$(ls -al /etc/init.d/lpd  2> /dev/null | grep ^l )" != '' ];then
+    rm -f /etc/init.d/lpd   2> /dev/null
+  fi
+fi
+
+if [ "$DUMMYLPRNG" = 1 ];then
+  if [ "$(ls -al /etc/init.d/lprng  2> /dev/null | grep ^l )" != '' ];then
+    rm -f /etc/init.d/lprng   2> /dev/null
+  fi
+fi
+
+#------------
+
+
+
+# for SuSE 64
+if [ "$arch" != "i386" ];then
+  if [ -d "$LIB64FLT" ] && [ -d "$LIBFLT" ] ;then
+    filter=$(ls $LIBFLT   2> /dev/null | grep -i $PRINTERNAME | head -n 1  )
+    filter64=$(ls $LIB64FLT  2> /dev/null | grep -i $PRINTERNAME | head -n 1 )
+    if [ "$filter" != '' ] && [ "$filter64" = '' ];then
+      echo cp "$LIBFLT"/$filter   "$LIB64FLT"
+      cp "$LIBFLT"/$filter   "$LIB64FLT"
+      echo -n -e $COLOR4
+      echo $LPADMIN -p $PRINTERNAME -E  $PPDOPT
+      echo -n -e $MONO
+      $LPADMIN -p $PRINTERNAME -E  $PPDOPT
+      rm64filter="rm -f $LIB64FLT/$filter"
+    fi
+  fi
+
+  if [ -d "$LIB32FLT" ]&& [ -d "$LIBFLT" ] ;then
+    filter=$(ls $LIBFLT  2> /dev/null  | grep -i $PRINTERNAME | head -n 1 )
+    filter32=$(ls $LIB32FLT  2> /dev/null| grep -i $PRINTERNAME | head -n 1 )
+    if [ "$filter" != '' ] && [ "$filter64" = '' ];then
+      echo cp "$LIBFLT"/$filter   "$LIB32FLT"
+      cp "$LIBFLT"/$filter   "$LIB32FLT"
+      echo -n -e $COLOR4
+      echo $LPADMIN -p $PRINTERNAME -E  $PPDOPT
+      echo -n -e $MONO
+      $LPADMIN -p $PRINTERNAME -E  $PPDOPT
+      rm32filter="rm -f $LIB64FLT/$filter"
+    fi
+  fi
+
+fi
+
+
+## /usr/lib32
+LPRPKGNAME=$(echo $LPRFILE       |\
+             sed s/"_.*$"//g     |\
+             sed s/"-.*$"//g)
+
+pkgpostfix=''
+
+if [ "$PKG" = deb ];then
+ if [ "${LPRPKGNAME}" != '' ];then
+  if [ "$(dpkg -l | grep ${LPRPKGNAME}:i386)" != '' ];then 
+       pkgpostfix=':i386'
+  fi
+  files=$(dpkg -L "$LPRPKGNAME""$pkgpostfix" | grep '/usr/lib/')
+ else
+  files=""
+ fi
+fi
+
+
+if [ "$PKG" = rpm ];then
+ if [ "${LPRPKGNAME}" != '' ];then
+  files=$(rpm -q --filesbypkg $LPRPKGNAME | \
+	grep '/usr/lib/' | \
+	sed s/"$LPRPKGNAME"//g | \
+	sed s/' '//g)
+ else
+  files=""
+ fi
+fi
+
+
+
+#--------------------------------
+#    make uninstall script
+
+DBG_MSG "make uninstaller script for printer : uninstaller_${PRINTERNAME}"
+
+uninstaller_prn=uninstaller_${PRINTERNAME}
+rm   -f $uninstaller_prn    2> /dev/null
+echo "#!  /bin/bash"                              > $uninstaller_prn
+echo "#RM_SELINUX_RULE=enable"                    >>$uninstaller_prn
+
+
+echo "#"                                          >>$uninstaller_prn
+echo "#  PRNL=$LPRFILE"                           >>$uninstaller_prn
+echo "#  PRNC=$CUPSFILE"                          >>$uninstaller_prn
+echo "#  PRNP=$PDRVFILE"                          >>$uninstaller_prn
+echo "#  SCAN=$SCANFILE"                          >>$uninstaller_prn
+echo "#  SKEY=$SKEYFILE"                          >>$uninstaller_prn
+echo "#"                                          >>$uninstaller_prn
+
+for pathlib in $files
+do
+  pathlib32lib=$(echo $pathlib | \
+                 sed s/'\/usr\/lib\/'/'\/usr\/lib32\/'/g)
+
+  if [ -d '/usr/lib32' ];then
+     if [ ! -f "$pathlib32lib" ]; then
+         if [ "$pathlib" != '' ] && [ "$pathlib32lib" != '' ];then
+           echo ln -s $pathlib  $pathlib32lib
+	   ln -s $pathlib  $pathlib32lib
+	   echo  "rm  -f $pathlib32lib"                  >> $uninstaller_prn
+         fi
+     fi
+  fi
+done
+
+
+## /usr/lib32 symlink
+
+
+if [ "$files" != '' ];then
+  for pathlib in $(ls $(echo "$files"|sed -e s/.so.*$/\*/g))
+  do
+    if [ -d '/usr/lib32' ];then
+      #echo pathlib32lib=$(echo $pathlib | sed -e s/"usr\/lib"/"usr\/lib32"/)
+      pathlib32lib=$(echo $pathlib | sed -e s/"usr\/lib"/"usr\/lib32"/)
+      if [ ! -f "$pathlib32lib" ]; then
+        if [ "$pathlib" != '' ] && [ "$pathlib32lib" != '' ];then
+	  echo ln -s $pathlib $pathlib32lib  
+	  ln -s $pathlib  $pathlib32lib
+	  echo  "rm  -f $pathlib32lib"                   >> $uninstaller_prn
+        fi
+      fi
+    fi
+  done
+fi
+
+## /lib/lib32 symlink
+
+# AppArmor
+
+if [ "$(which aa-complain  2> /dev/null)" != '' ];then
+    echo -e $COLOR$MESSAGE184$MONO          #"AppArmor"
+    echo  aa-complain cupsd
+    aa-complain cupsd
+fi
+
+
+#  for SELinux
+
+if [ "$(which semanage 2> /dev/null)" = '' ];then
+      if   [ "$(which yum 2>/dev/null)" != '' ];then
+        echo yum install  policycoreutils-python
+        yum install  policycoreutils-python
+        echo yum install  policycoreutils
+        yum install  policycoreutils
+      elif   [ "$(which dnf 2>/dev/null)" != '' ];then
+        echo dnf install  policycoreutils-python
+        dnf install  policycoreutils-python
+        echo dnf install  policycoreutils
+        dnf install  policycoreutils
+      fi
+fi
+
+if [ "$(which semanage 2> /dev/null)" = '' ];then
+      if   [ "$(which yum 2>/dev/null)" != '' ];then
+        echo yum install  policycoreutils-python-utils
+        yum install  policycoreutils-python-utils
+      elif   [ "$(which dnf 2>/dev/null)" != '' ];then
+        echo dnf install  policycoreutils-python-utils
+        dnf install  policycoreutils-python-utils
+      fi
+fi
+
+
+if [ "$(which semanage 2> /dev/null)" != '' ];then
+ 
+ echo \if [ \"\$RM_SELINUX_RULE\" = \"enable\" ]\;then   >> $uninstaller_prn
+ while read rule 
+ do 
+  if [ "$rule" != '' ];then
+   sedir=$(echo $rule | \
+           sed s/"^.*'\/"/"\/"/g | \
+           sed s/"\/(.*$"//g     |\
+           sed s/"(.*$"//g       |\
+           sed s/"'"//g)
+   rule2=$(echo $rule | sed s/"'"/""/g)
+   rule3=$(echo $rule | sed s/"("/"\("/g | sed s/")"/"\)"/g)
+   if [ -d $sedir ]; then
+     echo semanage fcontext -a -t $rule2
+     semanage fcontext -a -t $rule2
+     echo "  "echo semanage fcontext -d -t $rule3 >> $uninstaller_prn
+     echo "  "semanage fcontext -d -t $rule3      >> $uninstaller_prn
+     echo restorecon -R $sedir
+     restorecon -R $sedir
+     echo "  "echo restorecon -R $sedir             >> $uninstaller_prn
+     echo "  "restorecon -R $sedir                  >> $uninstaller_prn
+   fi
+  fi
+ done  << %%selinux_rules%%
+
+cupsd_rw_etc_t '/usr/local/Brother/Printer/(.*/)?inf(/.*)?'
+bin_t          '/usr/local/Brother/Printer/(.*/)?inf/brprintconf(.*)?'
+bin_t          '/usr/local/Brother/Printer/(.*/)?lpd(/.*)?'
+bin_t          '/usr/local/Brother/Printer/(.*/)?cupswrapper(/.*)?'
+
+bin_t          '/usr/local/Brother'
+cupsd_rw_etc_t '/usr/local/Brother/inf(/.*)?'
+bin_t          '/usr/local/Brother/lpd(/.*)?'
+bin_t          '/usr/local/Brother/cupswrapper(/.*)?'
+
+bin_t          '/opt/brother'
+cupsd_rw_etc_t '/etc/opt/brother'
+cupsd_rw_etc_t '/opt/brother/Printers/(.*/)?inf(/.*)?'
+cupsd_rw_etc_t '/etc/opt/brother/Printers/(.*/)?inf(/.*)?'
+bin_t          '/opt/brother/Printers/(.*/)?lpd(/.*)?'
+bin_t          '/opt/brother/Printers/(.*/)?cupswrapper(/.*)?'
+
+
+%%selinux_rules%%
+
+  if [ -e $LIBFLT ] ;then
+    echo restorecon -RFv $LIBFLT
+    restorecon -RFv $LIBFLT
+  fi
+  if [ -e $LIB32FLT ] ;then
+    echo restorecon -RFv $LIB32FLT
+    restorecon -RFv $LIB32FLT
+  fi
+  if [ -e $LIB64FLT ] ;then
+    echo restorecon -RFv $LIB64FLT
+    restorecon -RFv $LIB64FLT
+  fi
+  echo  setsebool -P cups_execmem 1
+  setsebool -P cups_execmem 1
+  echo  "  echo setsebool -P cups_execmem 0"  >> $uninstaller_prn
+  echo  "  setsebool -P cups_execmem 0"       >> $uninstaller_prn
+
+ echo fi    >> $uninstaller_prn
+
+fi
+
+
+#if [ "$(which setenforce  2> /dev/null)" != '' ];then
+#   echo -e $COLOR$MESSAGE182$MONO          #"SELinux"
+#   echo setenforce 0
+#   setenforce 0
+#fi 
+
+
+## Configure Device URI
+
+if [ "$RAWINSTALLED" = no ];then
+  echo -e -n $COLOR$MESSAGE190 #"Will you specify the Device URI\? [y/N] ->"
+  read answer
+  echo -e $MONO
+else
+  answer=Y
+fi
+
+if [ "$answer" != n ] && [ "$answer" != N ]; then
+  duri=$($LPINFO -v  | sed s/'^.* '//g  | \
+                       grep -v 'brserial_' | grep -v 'brusb_')
+  i=0
+  echo -e $COLOR4
+
+  autodurin=""
+  for deviceuri in $duri
+  do
+    prnn2=$(echo $PRINTERNAME | tr -d '-' | tr "[A-Z]" "[a-z]")
+    duri2=$(echo $deviceuri   | tr -d '-' | tr "[A-Z]" "[a-z]")
+    if [ "$(echo $duri2 | grep 'usb://brother' |grep $prnn2 2>/dev/null )" \
+               != '' ];then
+      autodurin=$i
+      autoduris=$deviceuri
+      break
+    else
+      i=$(($i+1))
+    fi
+  done
+
+  if [ "$autodurin" = '' ];then
+    i=0
+    for deviceuri in $duri
+    do
+      prnn2=$(echo $PRINTERNAME | tr -d '-' | tr "[A-Z]" "[a-z]")
+      duri2=$(echo $deviceuri   | tr -d '-' | tr "[A-Z]" "[a-z]")
+      if [ "$(echo $duri2  | grep  $prnn2 2>/dev/null)" != '' ];then
+        autodurin=$i
+        autoduris=$deviceuri
+        break
+      else
+        i=$(($i+1))
+      fi
+    done
+  fi
+
+  if [ "$autodurin" = '' ];then
+    i=0
+    for deviceuri in $duri
+    do
+      prnn2=$(echo $PRINTERNAME | tr -d '-' | tr "[A-Z]" "[a-z]")
+      duri2=$(echo $deviceuri   | tr -d '-' | tr "[A-Z]" "[a-z]")
+      if [ "$(echo $duri2  | grep  'usb://brother' 2>/dev/null)" != '' ];then
+        autodurin=$i
+        autoduris=$deviceuri
+      else
+        i=$(($i+1))
+      fi
+    done
+  fi
+
+  if [ "$autoduris" = '' ];then
+    autoduris='usb://dev/usblp0'
+  fi 
+
+  i=0
+  for deviceuri in $duri
+  do
+    echo $i: $deviceuri
+    i=$(($i+1))
+  done
+  echo -e  $i "(I)": $MESSAGE200   #"Specify IP address."
+  i=$(($i+1))
+  echo -e  $i "(A)": $MESSAGE201 "("$autoduris")"  #"Auto."
+  echo -e $MONO
+
+  echo -e -n  $COLOR$MESSAGE210       #"select the number of distination Device URI. ->"
+  read answer
+  echo -e $MONO
+
+  if [ "$answer" = "$((i-1))" ] || \
+     [ "$answer" = 'IP' ] || \
+     [ "$answer" = 'ip' ] || \
+     [ "$answer" = 'Ip' ] || \
+     [ "$answer" = 'i' ] || \
+     [ "$answer" = 'I' ];then
+    echo -e -n $COLOR$MESSAGE220          #"  enter IP address ->"
+    read ipadrs
+    echo -n -e $COLOR4
+    echo $LPADMIN -p $PRINTERNAME -v socket://$ipadrs -E   $PPDOPT
+    echo -e -n $MONO
+    $LPADMIN -p $PRINTERNAME -v socket://$ipadrs -E    $PPDOPT
+    deviceuri=socket://$ipadrs
+  elif [ "$answer" = "$i" ] || \
+       [ "$answer" = 'A' ]        || \
+       [ "$answer" = 'a' ]        || \
+       [ "$answer" = 'Auto' ]     || \
+       [ "$answer" = '' ] ;then
+    echo -n -e $COLOR4
+    echo $LPADMIN -p $PRINTERNAME -v $autoduris -E   $PPDOPT
+    echo -n -e $MONO
+    $LPADMIN -p $PRINTERNAME -v $autoduris -E   $PPDOPT
+    deviceuri=$autoduris
+  elif [ "$answer" = 'F' ] || [ "$answer" = 'f' ];then
+    echo -n -e $COLOR4
+    echo $LPADMIN -p $PRINTERNAME -v file:///tmp/printdata.prn -E    $PPDOPT
+    echo -n -e $MONO
+    $LPADMIN -p $PRINTERNAME -v file:///tmp/printdata.prn -E    $PPDOPT
+    deviceuri="file:///tmp/printdata.prn"
+  else
+   i=0
+   for deviceuri in $duri
+   do
+     if [ "$i" = "$answer" ];then
+       echo -e -n $COLOR4
+       echo $LPADMIN -p $PRINTERNAME -v $deviceuri -E    $PPDOPT
+       echo -e -n $MONO
+       $LPADMIN -p $PRINTERNAME -v $deviceuri -E    $PPDOPT
+       break
+     fi
+     i=$(($i+1))
+   done
+  fi
+elif [ "$answer" = "file" ] || [ "$answer" = "File" ]; then
+    echo -e -n $COLOR4
+    echo $LPADMIN -p $PRINTERNAME -v file:///tmp/printdata.prn -E    $PPDOPT
+    echo -e -n $MONO
+    $LPADMIN -p $PRINTERNAME -v file:///tmp/printdata.prn -E    $PPDOPT
+fi
+
+if [ "${modelnhuc}" = 'FAX' ];then
+  if [ -e /usr/lib/cups/filter/brfaxfilter ];then
+    chmod 755 /usr/lib/cups/filter/brfaxfilter
+  fi
+
+  if [ -e /usr/lib32/cups/filter ];then
+    if [ ! -e /usr/lib32/cups/filter/brfaxfilter ];then
+      cp /usr/lib/cups/filter/brfaxfilter /usr/lib32/cups/filter/brfaxfilter
+    fi
+    chmod 755 /usr/lib32/cups/filter/brfaxfilter
+  fi
+  if [ -e /usr/lib64/cups/filter ];then
+    if [ ! -e /usr/lib64/cups/filter/brfaxfilter ];then
+      cp /usr/lib/cups/filter/brfaxfilter /usr/lib64/cups/filter/brfaxfilter
+    fi
+    chmod 755 /usr/lib64/cups/filter/brfaxfilter
+  fi
+
+  if [ -f /etc/init.d/cups ];then
+     /etc/init.d/cups restart
+  elif [ -f /etc/init.d/cupsys ];then
+     /etc/init.d/cupsys restart
+  else 
+     service cups restart
+  fi
+
+fi
+
+
+
+
+socketdevice=$(echo "$deviceuri" | grep "socket:")
+
+if [ -n "$socketdevice" ] && [ "$ipadrs" = '' ];then
+    ipadrs=$(echo $socketdevice | sed s/"socket:\/\/"//g  | sed s/":.*$"//g)
+fi
+
+echo -e -n $COLOR$MESSAGE230         #"Test Print \? [y/N]. ->"
+read answer
+echo -e $MONO
+
+if [ "$answer" = Y ] || [ "$answer" = y ]; then
+  echo  wait 5s.
+  sleep 5
+
+  if [ -f $TESTPRINT ];then
+    echo lpr  -P $PRINTERNAME $TESTPRINT
+    lpr  -P "$PRINTERNAME" "$TESTPRINT"
+  elif [ -f $TESTPRINT2 ];then
+    echo lpr  -P $PRINTERNAME $TESTPRINT2
+    lpr  -P "$PRINTERNAME" "$TESTPRINT2"
+  else
+    echo "echo $PRINTERNAME \| lpr  -P $PRINTERNAME"
+    echo "$PRINTERNAME" | lpr  -P "$PRINTERNAME"
+  fi
+fi
+
+# Make uninstaller   : daemon symlink
+
+LPRPKGNAME=$(echo $LPRFILE       |\
+             sed s/"_.*$"//g     |\
+             sed s/"-.*$"//g)
+CUPSPKGNAME=$(echo $CUPSFILE    |\
+             sed s/"_.*$"//g     |\
+             sed s/"-.*$"//g)
+PDRVPKGNAME=$(echo $PDRVFILE    |\
+             sed s/"_.*$"//g     |\
+             sed s/"-.*$"//g)
+
+
+
+
+
+
+echo "if ! [ -f /etc/init.d/cupsys ];then"           >>$uninstaller_prn
+echo " DUMMYCUPSYS=1"                                >>$uninstaller_prn
+echo " ln -s /bin/true  /etc/init.d/cupsys"          >>$uninstaller_prn
+echo "fi"                                            >>$uninstaller_prn
+
+echo "if ! [ -f /etc/init.d/cups ];then"             >>$uninstaller_prn
+echo " DUMMYCUPS=1"                                  >>$uninstaller_prn
+echo " ln -s /bin/true  /etc/init.d/cups"            >>$uninstaller_prn
+echo "fi"                                            >>$uninstaller_prn
+
+echo "if ! [ -f /etc/init.d/lpd ];then"              >>$uninstaller_prn
+echo " DUMMYLPD=1"                                   >>$uninstaller_prn
+echo " ln -s /bin/true  /etc/init.d/lpd"             >>$uninstaller_prn
+echo "fi"                                            >>$uninstaller_prn
+
+echo "if ! [ -f /etc/init.d/lprng ];then"            >>$uninstaller_prn
+echo " DUMMYLPRNG=1"                                 >>$uninstaller_prn
+echo " ln -s /bin/true  /etc/init.d/lprng"           >>$uninstaller_prn
+echo "fi"                                            >>$uninstaller_prn
+
+
+
+
+#
+#rm cupswrapper driver
+if [ "$CUPSPKGNAME" != '' ];then
+  echo "$PREPKGCMDC"                                   >>$uninstaller_prn
+  echo "$RMPKGCMD    $CUPSPKGNAME""$pkgpostfix"        >>$uninstaller_prn
+fi
+#
+#rm lpd driver
+if [ "$LPRPKGNAME" != '' ];then
+  echo "$PREPKGCMDL"                                   >>$uninstaller_prn
+  echo "$RMPKGCMD    $LPRPKGNAME""$pkgpostfix"         >>$uninstaller_prn
+fi
+
+#rm pdrv driver
+if [ "$PDRVPKGNAME" != '' ];then
+  echo "$PREPKGCMDP"                                   >>$uninstaller_prn
+  echo "$RMPKGCMD    $PDRVPKGNAME""$pkgpostfix"         >>$uninstaller_prn
+fi
+
+
+
+if [ "$DUMMYCUPS" = 1 ]   || \
+   [ "$DUMMYCUPSYS" = 1 ] || \
+   [ "$DUMMYLPD" = 1 ]    || \
+   [ "$DUMMYLPRNG" = 1 ];then
+
+
+  echo 'if [ "$DUMMYCUPS" = 1 ];then'                  >>$uninstaller_prn
+  echo '  lsc=$(ls -al /etc/init.d/cups  2> /dev/null| grep ^l)'   >>$uninstaller_prn
+  echo '  if [ "$lsc" != "" ];then'                    >>$uninstaller_prn
+  echo '    rm -f /etc/init.d/cups'                    >>$uninstaller_prn
+  echo '  fi'                                          >>$uninstaller_prn
+  echo 'fi'                                            >>$uninstaller_prn
+  echo ''                                              >>$uninstaller_prn
+
+  echo 'if [ "$DUMMYCUPSYS" = 1 ];then'                >>$uninstaller_prn
+  echo '  lsc=$(ls -al /etc/init.d/cupsys  2> /dev/null| grep ^l)' >>$uninstaller_prn
+  echo '  if [ "$lsc" != "" ];then'                    >>$uninstaller_prn
+  echo '    rm -f /etc/init.d/cupsys'                  >>$uninstaller_prn
+  echo '  fi'                                          >>$uninstaller_prn
+  echo 'fi'                                            >>$uninstaller_prn
+  echo ''                                              >>$uninstaller_prn
+
+  echo 'if [ "$DUMMYLPD" = 1 ];then'                   >>$uninstaller_prn
+  echo '  lsc=$(ls -al /etc/init.d/lpd  2> /dev/null | grep ^l)'   >>$uninstaller_prn
+  echo '  if [ "$lsc" != "" ];then'                    >>$uninstaller_prn
+  echo '    rm -f /etc/init.d/lpd'                     >>$uninstaller_prn
+  echo '  fi'                                          >>$uninstaller_prn
+  echo 'fi'                                            >>$uninstaller_prn
+  echo ''                                              >>$uninstaller_prn
+
+  echo 'if [ "$DUMMYLPRNG" = 1 ];then'                 >>$uninstaller_prn
+  echo '  lsc=$(ls -al /etc/init.d/lprng | grep ^l)'   >>$uninstaller_prn
+  echo '  if [ "$lsc" != "" ];then'                    >>$uninstaller_prn
+  echo '    rm -f /etc/init.d/lprng'                   >>$uninstaller_prn
+  echo '  fi'                                          >>$uninstaller_prn
+  echo 'fi'                                            >>$uninstaller_prn
+
+
+  echo  $rm32filter                                    >>$uninstaller_prn
+  echo  $rm64filter                                    >>$uninstaller_prn
+
+fi 
+
+
+if [ "$SCAN" != '' ];then
+  echo $SCAN
+fi
+
+if [ "$SKEY" != '' ];then
+  echo $SKEY
+fi
+
+chmod 744 $uninstaller_prn
+
+pre_proc
+scanner_install          #    scanner
+post_proc
+
+if [ "$1" = '' ];then
+  echo -e -n $COLOR$MESSAGE240$MONO    #"Hit Return/Enter Key"
+  read answer
+fi
+#DBG_MSG  "exit 20"
+exit 0
