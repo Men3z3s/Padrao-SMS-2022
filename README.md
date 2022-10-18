@@ -1,7 +1,7 @@
 # Padrao-SMS-2022
 Padronização Secretária Municipal de Saúde 2022v - S.O. Linux Mint - XFCE-Cinnamon 
 
-Script desenvolvido a fim de configurar automaticamente os computadores da rede municipal de saúde de camboriú. 
+Script desenvolvido a fim de configurar automaticamente os computadores da rede Municipal de Saúde de Camboriú. 
 O script atualiza o sistema, instala todos programas necessários, desinstala os desnecessarios e faz algumas configurações de layout. 
 
 Programas instalados: 
